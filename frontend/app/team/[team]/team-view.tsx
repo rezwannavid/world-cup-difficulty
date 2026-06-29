@@ -314,7 +314,7 @@ function IndexView({
           tier={pdiTier}
           rank={pdiRank}
           total={total}
-          description="PDI is determined by simulating the bracket and creating an average on the strength of opponents it might have to face"
+          description="PDI Measures average opponent strength. A higher PDI means a harder path to the final."
         />
 
         <Metric
@@ -325,7 +325,7 @@ function IndexView({
           tier={rdsTier}
           rank={rdsRank}
           total={total}
-          description="RDS is determined by accounting the team's own strength and weighing it against the path it might face"
+          description="RDS Measures route difficulty relative to the team's itself."
         />
       </div>
     </div>
