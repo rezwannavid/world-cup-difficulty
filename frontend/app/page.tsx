@@ -13,52 +13,62 @@ export default function Home() {
   useEffect(() => {
     axios
       .get(`${process.env.NEXT_PUBLIC_API_URL}/teams`)
-      .then((res) => setTeams(res.data));
+      .then((res) => setTeams(res.data))
+      .catch(() => setTeams([]));
   }, []);
 
   return (
-    <main className="min-h-screen p-10">
-      <h1 className="text-4xl font-bold">
-        Tournament Path Difficulty Analyzer
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
+      <h1 className="text-pretty text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
+        <span className="text-primary">Tournament </span>
+        <span className="text-muted-foreground">Path Difficulty Analyzer</span>
       </h1>
 
-      <p className="mt-4 text-gray-600">
-        Select a team to analyze PSI, RDS, win probability, and opponent tree.
+      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+        Select a team to simulate its bracket and reveal how hard the road to
+        the final really is — opponent by opponent.
       </p>
 
-      <div className="mt-8 flex gap-4">
+      <div className="mt-8 space-y-3">
+        <label htmlFor="team" className="sr-only">
+          Select team
+        </label>
         <select
-          className="border p-2 rounded"
+          id="team"
+          className="w-full rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground outline-none transition focus:ring-2 focus:ring-ring"
           value={selectedTeam}
           onChange={(e) => setSelectedTeam(e.target.value)}
         >
-          <option value="">Select Team</option>
-
+          <option value="">Select a team</option>
           {teams.map((team) => (
-            <option key={team}>{team}</option>
+            <option key={team} value={team}>
+              {team}
+            </option>
           ))}
         </select>
 
         <button
           disabled={selectedTeam === ""}
-          className="bg-black text-white px-4 py-2 rounded"
+          className="w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           onClick={() => {
             if (selectedTeam === "") return;
             router.push(`/team/${encodeURIComponent(selectedTeam)}`);
           }}
         >
-          Analyze
+          Analyze Path
         </button>
-      </div>
 
-      <div className="mt-8">
         <button
-          className="border px-4 py-2 rounded"
+          className="w-full rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground transition hover:bg-card"
           onClick={() => router.push("/rankings")}
         >
           View Full Rankings
         </button>
       </div>
+
+      <footer className="mt-12 text-center text-xs text-muted-foreground">
+        made by Rezwan Navid
+      </footer>
     </main>
   );
 }
