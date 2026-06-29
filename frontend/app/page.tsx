@@ -19,14 +19,23 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
+      {/* Header artwork slot — ready for custom asset delivery */}
+      <div
+        data-artwork-slot="home-header"
+        aria-hidden="true"
+        className="mb-8 flex h-44 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-secondary text-xs font-medium uppercase tracking-widest text-muted-foreground"
+      >
+        Header Artwork
+      </div>
+
       <h1 className="text-pretty text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
-        <span className="text-primary">Tournament </span>
+        <span className="text-primary">FIFA World Cup 2026 </span>
         <span className="text-muted-foreground">Path Difficulty Analyzer</span>
       </h1>
 
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
         Select a team to simulate its bracket and reveal how hard the road to
-        the final really is — opponent by opponent.
+        the final really is.
       </p>
 
       <div className="mt-8 space-y-3">

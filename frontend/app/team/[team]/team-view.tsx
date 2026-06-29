@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   difficultyColor,
+  formatPoints,
   prettyRound,
   tierColor,
   tierFromRank,
+  type Tier,
 } from "../../lib/difficulty";
 
 type TeamData = {
@@ -198,13 +200,14 @@ function PathView({
 
         return (
           <section key={round}>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
+            {/* Round header */}
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {prettyRound(round)}
             </p>
 
-            {/* Highlighted top opponent */}
+            {/* Highlighted most-likely opponent */}
             <div
-              className="flex items-center gap-3 rounded-md px-4 py-3"
+              className="rounded-md px-4 py-3"
               style={{
                 backgroundColor:
                   topRating != null
@@ -212,34 +215,44 @@ function PathView({
                     : "var(--secondary)",
               }}
             >
-              <span className="flex-1 text-lg font-bold text-foreground">
-                {topName}
-              </span>
-              {topRating != null && topRating > 0 && (
-                <span className="text-sm tabular-nums text-foreground/70">
-                  {topRating.toFixed(0)}
+              <div className="flex items-center gap-3">
+                <span className="flex-1 text-lg font-bold text-foreground">
+                  {topName}
                 </span>
-              )}
-              <span className="w-12 text-right text-sm font-semibold tabular-nums text-foreground">
-                {pct(topProb)}
-              </span>
+                {topRating != null && topRating > 0 && (
+                  <span className="text-sm font-medium tabular-nums text-foreground/80">
+                    {formatPoints(topRating)}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs font-medium text-foreground/75">
+                Chance to Face: {pct(topProb)}
+              </p>
             </div>
 
             {/* Other possible opponents */}
-            {rest.map(([name, prob]) => (
-              <div
-                key={name}
-                className="flex items-center justify-between border-b border-border px-4 py-2.5"
-                style={{ opacity: Math.max(0.4, Math.min(1, prob + 0.25)) }}
-              >
-                <span className="text-base font-semibold text-foreground">
-                  {name}
-                </span>
-                <span className="w-12 text-right text-sm font-medium tabular-nums text-foreground">
-                  {pct(prob)}
-                </span>
-              </div>
-            ))}
+            {rest.map(([name, prob]) => {
+              const rating = ratingOf(name);
+              return (
+                <div
+                  key={name}
+                  className="flex items-center gap-3 border-b border-border px-4 py-2.5"
+                  style={{ opacity: Math.max(0.45, Math.min(1, prob + 0.25)) }}
+                >
+                  <span className="flex-1 text-base font-semibold text-foreground">
+                    {name}
+                  </span>
+                  {rating != null && rating > 0 && (
+                    <span className="text-xs tabular-nums text-muted-foreground">
+                      {formatPoints(rating)}
+                    </span>
+                  )}
+                  <span className="w-28 text-right text-xs font-medium tabular-nums text-foreground">
+                    Chance to Face: {pct(prob)}
+                  </span>
+                </div>
+              );
+            })}
           </section>
         );
       })}
@@ -267,8 +280,8 @@ function IndexView({
   pdiRank: number;
   rdsRank: number;
   total: number;
-  pdiTier: "Easy" | "Moderate" | "Hard";
-  rdsTier: "Easy" | "Moderate" | "Hard";
+  pdiTier: Tier;
+  rdsTier: Tier;
 }) {
   return (
     <div className="mt-9">
@@ -292,11 +305,11 @@ function IndexView({
                 {name}
               </span>
               {rating != null && rating > 0 && (
-                <span className="text-sm tabular-nums text-foreground/70">
-                  {rating.toFixed(0)}
+                <span className="text-sm font-medium tabular-nums text-foreground/80">
+                  {formatPoints(rating)}
                 </span>
               )}
-              <span className="w-12 text-right text-sm font-semibold tabular-nums text-foreground">
+              <span className="w-16 text-right text-sm font-semibold tabular-nums text-foreground">
                 {pct(prob)}
               </span>
             </div>
@@ -314,7 +327,7 @@ function IndexView({
           tier={pdiTier}
           rank={pdiRank}
           total={total}
-          description="PDI Measures average opponent strength. A higher PDI means a harder path to the final."
+          description="Path Difficulty Index — the average strength of the opponents this team is likely to meet on its road to the final. A higher PDI means a tougher path."
         />
 
         <Metric
@@ -325,7 +338,7 @@ function IndexView({
           tier={rdsTier}
           rank={rdsRank}
           total={total}
-          description="RDS Measures route difficulty relative to the team's itself."
+          description="Relative Difficulty Score — how brutal this team's specific bracket layout is compared to every other nation in the tournament."
         />
       </div>
     </div>
