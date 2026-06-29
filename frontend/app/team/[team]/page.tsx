@@ -1,4 +1,5 @@
 import axios from "axios";
+import { TeamView } from "./team-view";
 
 type TeamData = {
   team: string;
@@ -9,6 +10,13 @@ type TeamData = {
   opponents: Record<string, Record<string, number>>;
 };
 
+type Ranking = {
+  team: string;
+  PSI: number;
+  RDS: number;
+  win_probability: number;
+};
+
 type Props = {
   params: Promise<{ team: string }>;
 };
@@ -16,67 +24,30 @@ type Props = {
 export default async function TeamPage({ params }: Props) {
   const { team } = await params;
 
-  const res = await axios.get(
-    `${process.env.NEXT_PUBLIC_API_URL}/team/${team}`
-  );
+  const [teamRes, rankingsRes] = await Promise.all([
+    axios.get<TeamData>(`${process.env.NEXT_PUBLIC_API_URL}/team/${team}`),
+    axios.get<Ranking[]>(`${process.env.NEXT_PUBLIC_API_URL}/rankings`),
+  ]);
 
-  const data: TeamData = res.data;
+  const data = teamRes.data;
+  const rankings = rankingsRes.data;
+
+  const total = rankings.length;
+
+  // PDI (PSI) rank: higher PSI = harder path = rank 1
+  const psiSorted = [...rankings].sort((a, b) => b.PSI - a.PSI);
+  const pdiRank = psiSorted.findIndex((r) => r.team === data.team) + 1;
+
+  // RDS rank: higher RDS = harder relative path = rank 1
+  const rdsSorted = [...rankings].sort((a, b) => b.RDS - a.RDS);
+  const rdsRank = rdsSorted.findIndex((r) => r.team === data.team) + 1;
 
   return (
-    <main className="p-10 max-w-4xl mx-auto">
-      <h1 className="text-4xl font-bold">{data.team}</h1>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-2 gap-4 mt-8">
-        <div className="border rounded p-4">
-          <p className="font-bold">FIFA Rating</p>
-          <p>{data.rating}</p>
-        </div>
-
-        <div className="border rounded p-4">
-          <p className="font-bold">Win Probability</p>
-          <p>{(data.win_probability * 100).toFixed(2)}%</p>
-        </div>
-
-        <div className="border rounded p-4">
-          <p className="font-bold">PSI</p>
-          <p>{data.PSI.toFixed(2)}</p>
-        </div>
-
-        <div className="border rounded p-4">
-          <p className="font-bold">RDS</p>
-          <p>{data.RDS.toFixed(2)}</p>
-        </div>
-      </div>
-
-      {/* Opponent probabilities */}
-      <div className="mt-10">
-        <h2 className="text-2xl font-bold mb-4">Possible Opponents</h2>
-
-        {Object.entries(data.opponents).map(([round, teams]) => (
-          <div key={round} className="mb-8">
-            <h3 className="text-xl font-semibold mb-3">{round}</h3>
-
-            {Object.entries(teams)
-              .sort((a, b) => b[1] - a[1])
-              .map(([team, prob]) => (
-                <div key={team} className="mb-3">
-                  <div className="flex justify-between">
-                    <span>{team}</span>
-                    <span>{(prob * 100).toFixed(2)}%</span>
-                  </div>
-
-                  <div className="w-full bg-gray-200 rounded h-2 mt-1">
-                    <div
-                      className="bg-black h-2 rounded"
-                      style={{ width: `${prob * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-          </div>
-        ))}
-      </div>
-    </main>
+    <TeamView
+      data={data}
+      pdiRank={pdiRank || total}
+      rdsRank={rdsRank || total}
+      total={total}
+    />
   );
 }

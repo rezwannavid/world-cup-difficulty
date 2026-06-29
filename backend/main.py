@@ -4,6 +4,13 @@ from simulation import run_model, teams, PSI, RDS, win_probabilities
 from functools import lru_cache
 
 
+def team_rating(name: str) -> float:
+    try:
+        return float(teams[name]["rank"])
+    except (KeyError, TypeError, ValueError):
+        return 0.0
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -52,12 +59,20 @@ def get_teams():
 def get_team(team_name: str):
     result = cached_team(team_name)
 
+    # Collect ratings for every opponent that appears in the path so the
+    # frontend can show opponent strength and color-code difficulty.
+    ratings = {}
+    for opponents in result["opponents"].values():
+        for opponent_team in opponents:
+            ratings[opponent_team] = team_rating(opponent_team)
+
     return {
         "team": result["team"],
         "rating": float(result["rating"]),
         "win_probability": float(result["win_probability"]),
         "PSI": float(result["PSI"]),
         "RDS": float(result["RDS"]),
+        "ratings": ratings,
         "opponents": {
             round_name: {
                 opponent_team: float(prob)
