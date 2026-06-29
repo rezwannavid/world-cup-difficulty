@@ -64,6 +64,13 @@ export default function Home() {
         >
           View Full Rankings
         </button>
+
+        <button
+          className="w-full px-5 py-2 text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-primary hover:underline"
+          onClick={() => router.push("/methodology")}
+        >
+          How it works — Read the Methodology
+        </button>
       </div>
 
       <footer className="mt-12 text-center text-xs text-muted-foreground">
