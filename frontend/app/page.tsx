@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
@@ -19,13 +20,16 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
-      {/* Header artwork slot — ready for custom asset delivery */}
-      <div
-        data-artwork-slot="home-header"
-        aria-hidden="true"
-        className="mb-8 flex h-44 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-secondary text-xs font-medium uppercase tracking-widest text-muted-foreground"
-      >
-        Header Artwork
+      {/* Header artwork slot */}
+      <div className="mb-8 w-full overflow-hidden rounded-lg">
+        <Image
+          src="/header-artwork.png"
+          alt="FIFA World Cup 2026 Path Difficulty Analyzer Header"
+          width={1200}
+          height={420}
+          className="h-auto w-full object-cover"
+          priority
+        />
       </div>
 
       <h1 className="text-pretty text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
