@@ -23,6 +23,18 @@
   --accent-green: #7ee0a6;
   --accent-red: #d97a7a;
 
+  /* FIFA ranking-point bands */
+  --rank-green: #2f9e54;
+  --rank-yellow: #e3c93f;
+  --rank-red: #c0392b;
+
+  /* PDI / RDS 5-tier difficulty scale (rank 1 = hardest) */
+  --tier-very-hard: #c0392b;
+  --tier-hard: #e07a3f;
+  --tier-moderate: #e3c93f;
+  --tier-easy-ish: #a8d96a;
+  --tier-easy: #4fbf73;
+
   --radius: 0.85rem;
 }
 
@@ -44,7 +56,13 @@
   --color-accent-green: var(--accent-green);
   --color-accent-red: var(--accent-red);
 
-  --font-sans: var(--font-figtree);
+  --color-tier-very-hard: var(--tier-very-hard);
+  --color-tier-hard: var(--tier-hard);
+  --color-tier-moderate: var(--tier-moderate);
+  --color-tier-easy-ish: var(--tier-easy-ish);
+  --color-tier-easy: var(--tier-easy);
+
+  --font-sans: var(--font-space-grotesk);
   --font-mono: var(--font-geist-mono);
 
   --radius-lg: var(--radius);
@@ -55,5 +73,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-figtree), system-ui, sans-serif;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
 }

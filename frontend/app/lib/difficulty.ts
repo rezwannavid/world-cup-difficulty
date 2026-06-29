@@ -1,32 +1,78 @@
-// Maps an opponent rating to a difficulty color (green = easy, red = hard).
-// The hue sweeps from green (145) through olive/amber down to red (0).
-const MIN_RATING = 1500;
-const MAX_RATING = 2450;
+// Maps a team's FIFA ranking points to a difficulty band.
+// Higher points = stronger opponent = harder.
+//   Green  : 1300 <= pts < 1500   (manageable)
+//   Yellow : 1500 <= pts < 1760   (tough)
+//   Red    : pts >= 1760          (elite / brutal)
 
-export function difficultyColor(rating: number, alpha = 1): string {
-  const clamped = Math.max(MIN_RATING, Math.min(MAX_RATING, rating));
-  const t = (clamped - MIN_RATING) / (MAX_RATING - MIN_RATING); // 0 easy -> 1 hard
-  const hue = 145 * (1 - t);
-  const sat = 38;
-  const light = 22;
-  return `hsl(${hue.toFixed(0)} ${sat}% ${light}% / ${alpha})`;
+export function rankBand(points: number): "green" | "yellow" | "red" {
+  if (points >= 1760) return "red";
+  if (points >= 1500) return "yellow";
+  return "green";
 }
 
-export type Tier = "Easy" | "Moderate" | "Hard";
+// Returns a translucent background color for an opponent card based on FIFA points.
+export function difficultyColor(points: number, alpha = 0.9): string {
+  if (!points || points <= 0) return "var(--secondary)";
+  const band = rankBand(points);
+  const base: Record<typeof band, string> = {
+    green: "47 54% 40%", // vibrant green
+    yellow: "49 75% 56%", // vibrant yellow
+    red: "6 64% 46%", // authoritative red
+  };
+  return `hsl(${base[band]} / ${alpha})`;
+}
 
-// rank is 1-based, 1 = hardest. total = number of teams.
-export function tierFromRank(rank: number, total: number): Tier {
-  const third = total / 3;
-  if (rank <= third) return "Hard";
-  if (rank <= third * 2) return "Moderate";
+// Formats FIFA ranking points cleanly, e.g. 1642 -> "1,642 pts".
+export function formatPoints(points: number): string {
+  return `${Math.round(points).toLocaleString("en-US")} pts`;
+}
+
+/* ----------------------- PDI / RDS 5-tier scale ----------------------- */
+// Rank 1 = hardest possible path (Bad). Rank N = easiest (Good).
+// Tiers are scaled to the total number of teams (default thresholds match a
+// 32-team field):
+//   1 – 8   Very Hard          -> very red
+//   9 – 15  Moderately Hard    -> deep orange
+//   16 – 22 Moderate           -> pure yellow
+//   23 – 27 Moderately Easy    -> yellowish green
+//   28 – 32 Easy               -> solid green
+
+export type Tier =
+  | "Very Hard"
+  | "Moderately Hard"
+  | "Moderate"
+  | "Moderately Easy"
+  | "Easy";
+
+export function tierFromRank(rank: number, total = 32): Tier {
+  // Scale the 32-based thresholds to whatever the field size is.
+  const f = total / 32;
+  if (rank <= 8 * f) return "Very Hard";
+  if (rank <= 15 * f) return "Moderately Hard";
+  if (rank <= 22 * f) return "Moderate";
+  if (rank <= 27 * f) return "Moderately Easy";
   return "Easy";
 }
 
 export const tierColor: Record<Tier, string> = {
-  Hard: "var(--accent-red)",
-  Moderate: "var(--accent-orange)",
-  Easy: "var(--accent-green)",
+  "Very Hard": "var(--tier-very-hard)",
+  "Moderately Hard": "var(--tier-hard)",
+  Moderate: "var(--tier-moderate)",
+  "Moderately Easy": "var(--tier-easy-ish)",
+  Easy: "var(--tier-easy)",
 };
+
+// Translucent version for row backgrounds.
+export function tierBg(tier: Tier, alpha = 0.85): string {
+  const hsl: Record<Tier, string> = {
+    "Very Hard": "6 64% 46%",
+    "Moderately Hard": "22 73% 56%",
+    Moderate: "49 75% 56%",
+    "Moderately Easy": "84 56% 63%",
+    Easy: "142 43% 53%",
+  };
+  return `hsl(${hsl[tier]} / ${alpha})`;
+}
 
 export const ROUND_LABELS: Record<string, string> = {
   "Round of 32": "Round of 32",
