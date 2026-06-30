@@ -29,7 +29,7 @@ def cached_team(team_name: str):
     return run_model(team_name)
 
 @lru_cache(maxsize=1)
-def cached_rankings(sort: str = "psi"):
+def cached_rankings(sort: str = "psi", order: str = "desc"):
     data = []
 
     for team in teams:
@@ -40,10 +40,12 @@ def cached_rankings(sort: str = "psi"):
             "win_probability": win_probabilities.get(team, 0)
         })
 
+    reverse = order == "desc"
+
     if sort == "rds":
-        data.sort(key=lambda x: x["RDS"], reverse=True)
+        data.sort(key=lambda x: x["RDS"], reverse=reverse)
     else:
-        data.sort(key=lambda x: x["PSI"], reverse=True)
+        data.sort(key=lambda x: x["PSI"], reverse=reverse)
 
     return data
 
@@ -91,5 +93,5 @@ def get_team(team_name: str):
     }
 
 @app.get("/rankings")
-def rankings(sort: str = "psi"):
-    return cached_rankings(sort)
+def rankings(sort: str = "psi", order: str = "desc"):
+    return cached_rankings(sort, order)

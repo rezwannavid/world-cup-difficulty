@@ -16,13 +16,14 @@ type Ranking = {
 export default async function RankingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; order?: string }>;
 }) {
-  const { sort } = await searchParams;
+  const { sort, order } = await searchParams;
   const metric = sort === "rds" ? "rds" : "psi";
+  const direction = order === "asc" ? "asc" : "desc";
 
   const res = await axios.get<Ranking[]>(
-    `${process.env.NEXT_PUBLIC_API_URL}/rankings?sort=${metric}`
+    `${process.env.NEXT_PUBLIC_API_URL}/rankings?sort=${metric}&order=${direction}`
   );
   const data = res.data;
   const visibleData = data.map((team) => ({
@@ -44,33 +45,36 @@ export default async function RankingsPage({
       </p>
 
       {/* Single-row action bar: Back + sort controls scale uniformly */}
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 flex items-center gap-3">
         <Link
           href="/"
-          className="btn-animate flex items-center justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
+          className="btn-animate flex shrink-0 items-center justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
         >
-          Back to Home
+          Home
         </Link>
-        <Link
-          href="/rankings?sort=psi"
-          className={`flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-            metric === "psi"
-              ? "btn-animate bg-primary text-primary-foreground"
-              : "btn-animate border border-border bg-secondary text-secondary-foreground"
-          }`}
-        >
-          Sort by PDI
-        </Link>
-        <Link
-          href="/rankings?sort=rds"
-          className={`flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-            metric === "rds"
-              ? "btn-animate bg-primary text-primary-foreground"
-              : "btn-animate border border-border bg-secondary text-secondary-foreground"
-          }`}
-        >
-          Sort by RDS
-        </Link>
+
+        <div className="flex flex-1 rounded-full border border-border bg-secondary p-1">
+          <Link
+            href={`/rankings?sort=psi&order=${metric === "psi" && direction === "desc" ? "asc" : "desc"}`}
+            className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold transition ${
+              metric === "psi"
+                ? "btn-animate bg-primary text-primary-foreground"
+                : "text-secondary-foreground"
+            }`}
+          >
+            PDI {metric === "psi" ? (direction === "desc" ? "↓" : "↑") : ""}
+          </Link>
+          <Link
+            href={`/rankings?sort=rds&order=${metric === "rds" && direction === "desc" ? "asc" : "desc"}`}
+            className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold transition ${
+              metric === "rds"
+                ? "btn-animate bg-primary text-primary-foreground"
+                : "text-secondary-foreground"
+            }`}
+          >
+            RDS {metric === "rds" ? (direction === "desc" ? "↓" : "↑") : ""}
+          </Link>
+        </div>
       </div>
 
       {/* What the metrics mean */}
