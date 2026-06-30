@@ -44,7 +44,7 @@ export default async function RankingsPage({
       <div className="mt-6 grid grid-cols-3 gap-3">
         <Link
           href="/"
-          className="flex items-center justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-card"
+          className="btn-animate flex items-center justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
         >
           Back to Home
         </Link>
@@ -52,8 +52,8 @@ export default async function RankingsPage({
           href="/rankings?sort=psi"
           className={`flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition ${
             metric === "psi"
-              ? "bg-primary text-primary-foreground"
-              : "border border-border bg-secondary text-secondary-foreground hover:bg-card"
+              ? "btn-animate bg-primary text-primary-foreground"
+              : "btn-animate border border-border bg-secondary text-secondary-foreground"
           }`}
         >
           Sort by PDI
@@ -62,8 +62,8 @@ export default async function RankingsPage({
           href="/rankings?sort=rds"
           className={`flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition ${
             metric === "rds"
-              ? "bg-primary text-primary-foreground"
-              : "border border-border bg-secondary text-secondary-foreground hover:bg-card"
+              ? "btn-animate bg-primary text-primary-foreground"
+              : "btn-animate border border-border bg-secondary text-secondary-foreground"
           }`}
         >
           Sort by RDS

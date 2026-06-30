@@ -28,7 +28,7 @@
   --rank-yellow: #e3c93f;
   --rank-red: #c0392b;
 
-  /* PDI / RDS 5-tier difficulty scale (rank 1 = hardest) */
+  /* PDI / RDS 5-tier difficulty scale */
   --tier-very-hard: #c0392b;
   --tier-hard: #e07a3f;
   --tier-moderate: #e3c93f;
@@ -36,6 +36,10 @@
   --tier-easy: #4fbf73;
 
   --radius: 0.85rem;
+
+  /* Apple-style motion */
+  --spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-fast: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @theme inline {
@@ -70,8 +74,71 @@
   --radius-sm: calc(var(--radius) - 0.4rem);
 }
 
+/* =========================
+   BASE
+   ========================= */
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-space-grotesk), system-ui, sans-serif;
+}
+
+/* =========================
+   APPLE-STYLE MOTION SYSTEM
+   (SCOPED - NOT GLOBAL BUTTON OVERRIDES)
+   ========================= */
+
+.btn-animate {
+  transition:
+    transform 280ms var(--spring),
+    box-shadow 280ms var(--spring),
+    background-color 200ms ease,
+    opacity 200ms ease;
+
+  will-change: transform;
+  transform-origin: center;
+}
+
+/* hover lift + soft scale */
+.btn-animate:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* press-in effect */
+.btn-animate:active {
+  transform: translateY(1px) scale(0.96);
+  transition-duration: 120ms;
+  transition-timing-function: var(--spring-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* focus (Apple-style soft glow) */
+.btn-animate:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(142, 233, 176, 0.25),
+    0 0 0 6px rgba(142, 233, 176, 0.08);
+}
+
+/* =========================
+   ICON / ARROW INTERACTION
+   ========================= */
+
+.btn-animate svg {
+  transition: transform 280ms var(--spring);
+  transform-origin: center;
+}
+
+/* subtle pop on hover */
+.btn-animate:hover svg {
+  transform: scale(1.12) translateX(1px);
+}
+
+/* press compression */
+.btn-animate:active svg {
+  transform: scale(0.92);
+  transition-duration: 120ms;
+  transition-timing-function: var(--spring-fast);
 }

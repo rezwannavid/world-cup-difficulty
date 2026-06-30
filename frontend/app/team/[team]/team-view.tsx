@@ -107,7 +107,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
 
         <button
           onClick={() => router.push("/")}
-          className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          className="btn-animate mt-6 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
         >
           Change Team
         </button>
@@ -135,14 +135,14 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
           <>
             <button
               onClick={() => router.push("/")}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-card"
+              className="btn-animate inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground"
             >
               <ArrowLeft />
               Change Team
             </button>
             <button
               onClick={() => setView("index")}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="btn-animate inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
             >
               See Difficulty Index
               <ArrowRight />
@@ -152,14 +152,14 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
           <>
             <button
               onClick={() => setView("path")}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground transition hover:bg-card"
+              className="btn-animate inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground"
             >
               <ArrowLeft />
               See Opponent
             </button>
             <button
               onClick={() => router.push("/rankings")}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="btn-animate inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
             >
               See Full List
             </button>

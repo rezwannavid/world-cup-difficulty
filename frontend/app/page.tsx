@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const [teams, setTeams] = useState<string[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
@@ -43,43 +45,97 @@ export default function Home() {
       </p>
 
       <div className="mt-8 space-y-3">
-        <label htmlFor="team" className="sr-only">
-          Select team
-        </label>
-        <select
-          id="team"
-          className="w-full rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground outline-none transition focus:ring-2 focus:ring-ring"
-          value={selectedTeam}
-          onChange={(e) => setSelectedTeam(e.target.value)}
-        >
-          <option value="">Select a team</option>
-          {teams.map((team) => (
-            <option key={team} value={team}>
-              {team}
-            </option>
-          ))}
-        </select>
+        <div className="relative w-full">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((v) => !v)}
+            className="btn-animate flex w-full items-center justify-between rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
+          >
+            <span>
+              {selectedTeam === "" ? "Select a team" : selectedTeam}
+            </span>
+
+            <svg
+              className={`h-4 w-4 transition-transform duration-200 ${
+                dropdownOpen ? "rotate-180" : ""
+              }`}
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-2xl border border-border bg-card shadow-lg">
+              {teams.map((team) => (
+                <button
+                  key={team}
+                  onClick={() => {
+                    setSelectedTeam(team);
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full px-5 py-3 text-left text-sm text-secondary-foreground hover:bg-secondary"
+                >
+                  {team}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <button
-          disabled={selectedTeam === ""}
-          className="w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={selectedTeam === "" || loading}
+          className="btn-animate w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           onClick={() => {
             if (selectedTeam === "") return;
+
+            setLoading(true);
+
             router.push(`/team/${encodeURIComponent(selectedTeam)}`);
           }}
         >
-          Analyze Path
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg
+                className="h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              Analyzing...
+            </span>
+          ) : (
+            "Analyze Path"
+          )}
         </button>
 
         <button
-          className="w-full rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground transition hover:bg-card"
+          className="btn-animate w-full rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
           onClick={() => router.push("/rankings")}
         >
           View Full Rankings
         </button>
 
         <button
-          className="w-full px-5 py-2 text-sm font-medium text-muted-foreground underline-offset-4 transition hover:text-primary hover:underline"
+          className="w-full px-5 py-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
           onClick={() => router.push("/methodology")}
         >
           How it works — Read the Methodology
