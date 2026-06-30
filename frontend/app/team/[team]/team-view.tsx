@@ -19,6 +19,7 @@ type TeamData = {
   RDS: number;
   ratings?: Record<string, number>;
   opponents: Record<string, Record<string, number>>;
+  eliminated?: boolean;
 };
 
 type Props = {
@@ -215,8 +216,8 @@ function PathView({
                     : "var(--secondary)",
               }}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex-1 text-lg font-bold text-foreground">
+            <div className="flex items-center gap-3">
+                <span className={`flex-1 text-lg font-bold ${topProb <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
                   {topName}
                 </span>
                 {topRating != null && topRating > 0 && (
@@ -226,7 +227,7 @@ function PathView({
                 )}
               </div>
               <p className="mt-0.5 text-xs font-medium text-foreground/75">
-                Chance to Face: {pct(topProb)}
+                Chance to Face: {topProb <= 0 ? "0%" : pct(topProb)}
               </p>
             </div>
 
@@ -239,7 +240,7 @@ function PathView({
                   className="flex items-center gap-3 border-b border-border px-4 py-2.5"
                   style={{ opacity: Math.max(0.45, Math.min(1, prob + 0.25)) }}
                 >
-                  <span className="flex-1 text-base font-semibold text-foreground">
+                  <span className={`flex-1 text-base font-semibold ${prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
                     {name}
                   </span>
                   {rating != null && rating > 0 && (
@@ -248,7 +249,7 @@ function PathView({
                     </span>
                   )}
                   <span className="w-28 text-right text-xs font-medium tabular-nums text-foreground">
-                    Chance to Face: {pct(prob)}
+                    Chance to Face: {prob <= 0 ? "0%" : pct(prob)}
                   </span>
                 </div>
               );

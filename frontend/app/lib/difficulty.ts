@@ -11,15 +11,15 @@ export function rankBand(points: number): "green" | "yellow" | "red" {
 }
 
 // Returns a translucent background color for an opponent card based on FIFA points.
-export function difficultyColor(points: number, alpha = 0.9): string {
-  if (!points || points <= 0) return "var(--secondary)";
-  const band = rankBand(points);
-  const base: Record<typeof band, string> = {
-    green: "47 54% 40%", // vibrant green
-    yellow: "49 75% 56%", // vibrant yellow
-    red: "6 64% 46%", // authoritative red
-  };
-  return `hsl(${base[band]} / ${alpha})`;
+export function difficultyColor(rating: number): string {
+  if (!rating || rating <= 0) return "rgba(148, 163, 184, 0.5)"; // neutral fallback
+
+  if (rating >= 2100) return "rgba(245, 62, 77, 0.95)";
+  if (rating >= 2000) return "rgba(242, 89, 91, 0.9)";
+  if (rating >= 1900) return "rgba(242, 165, 63, 0.85)";
+  if (rating >= 1800) return "rgba(234, 211, 97, 0.8)";
+  if (rating >= 1700) return "rgba(49, 161, 108, 0.8)";
+  return "rgba(34, 197, 94, 0.8)";
 }
 
 // Formats FIFA ranking points cleanly, e.g. 1642 -> "1,642 pts".

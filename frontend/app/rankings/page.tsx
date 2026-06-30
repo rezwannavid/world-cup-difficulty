@@ -7,6 +7,7 @@ type Ranking = {
   PSI: number;
   RDS: number;
   win_probability: number;
+  eliminated: boolean;
 };
 
 export default async function RankingsPage({
@@ -21,7 +22,11 @@ export default async function RankingsPage({
     `${process.env.NEXT_PUBLIC_API_URL}/rankings?sort=${metric}`
   );
   const data = res.data;
-  const total = data.length;
+  const visibleData = data.map((team) => ({
+    ...team,
+    eliminated: team.eliminated ?? team.win_probability === 0,
+  }));
+  const total = visibleData.length;
 
   return (
     <main className="mx-auto w-full max-w-md px-5 pb-16 pt-10">
@@ -88,31 +93,33 @@ export default async function RankingsPage({
           <span className="w-16 text-right">RDS</span>
         </div>
 
-        {data.map((team, index) => {
+        {visibleData.map((team, index) => {
           const rank = index + 1;
           const tier = tierFromRank(rank, total);
           return (
             <Link
               key={team.team}
               href={`/team/${encodeURIComponent(team.team)}`}
-              className="flex items-center gap-3 border-t border-border px-4 py-3 transition hover:brightness-110"
-              style={{ backgroundColor: tierBg(tier, 0.85) }}
+              className={`flex items-center gap-3 border-t border-border px-4 py-3 transition hover:brightness-110 ${team.eliminated ? "bg-muted opacity-80" : ""}`}
+              style={team.eliminated ? { filter: "grayscale(100%)" } : { backgroundColor: tierBg(tier, 0.85) }}
             >
-              <span className="w-7 text-sm font-semibold tabular-nums text-foreground/80">
+              <span className={`w-7 text-sm font-semibold tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground/80"}`}>
                 {rank}
               </span>
               <span className="flex-1">
-                <span className="block text-base font-bold text-foreground">
+                <span
+                  className={`block text-base font-bold ${team.eliminated ? "line-through decoration-2 decoration-white text-white opacity-50" : "text-foreground"}`}
+                >
                   {team.team}
                 </span>
                 <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-foreground/75">
                   {tier}
                 </span>
               </span>
-              <span className="w-14 text-right text-sm tabular-nums text-foreground">
+              <span className={`w-14 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
                 {team.PSI.toFixed(0)}
               </span>
-              <span className="w-16 text-right text-sm tabular-nums text-foreground/80">
+              <span className={`w-16 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground/80"}`}>
                 {team.RDS.toFixed(1)}
               </span>
             </Link>
