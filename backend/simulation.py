@@ -20,7 +20,7 @@ def load_teams():
     return {
         row["Team"]: {
             "name": row["Team"],
-            "rank": row["Fifa Ranking"]
+            "rank": row["Elo Ratings"]
         }
         for _, row in df.iterrows()
     }
