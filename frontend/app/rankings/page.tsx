@@ -133,8 +133,8 @@ export default async function RankingsPage({
                   >
                     {team.team}
                   </span>
-                  <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-foreground/75">
-                    {tier}
+                  <span className={`text-[0.7rem] font-semibold uppercase tracking-wider ${team.eliminated ? "text-white/50" : "text-foreground/75"}`}>
+                    {team.eliminated ? "Eliminated" : tier}
                   </span>
                 </span>
               </div>
