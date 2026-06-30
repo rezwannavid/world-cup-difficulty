@@ -24,7 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@lru_cache(maxsize=64)
 def cached_team(team_name: str):
     return run_model(team_name)
 
@@ -70,24 +69,20 @@ def get_teams():
 @app.get("/team/{team_name}")
 def get_team(team_name: str):
     result = cached_team(team_name)
+    print("TEAM:", team_name)
+    print("DEFEATED TEAMS:", result.get("defeated_teams"))
+    print("DEFEATED BY:", result.get("defeated_by"))
+    defeated_by = result.get("defeated_by")
+    defeated_teams = result.get("defeated_teams", [])
+    elimination_history = result.get("elimination_history", [])
 
     # Collect ratings for every opponent that appears in the path so the
     # frontend can show opponent strength and color-code difficulty.
     ratings = {}
     for opponents in result["opponents"].values():
         for opponent_team in opponents:
-            ratings[opponent_team] = team_rating(opponent_team)
-
-    # Compute per-round "primary path winner" based on highest probability
-    round_winners = {}
-
-    for round_name, opponents in result["opponents"].items():
-        if not opponents:
-            continue
-
-        # pick opponent with highest probability in this round
-        winner_team = max(opponents.items(), key=lambda x: x[1])[0]
-        round_winners[round_name] = winner_team
+            if opponent_team != result["team"]:
+                ratings[opponent_team] = team_rating(opponent_team)
 
     return {
         "team": result["team"],
@@ -96,14 +91,16 @@ def get_team(team_name: str):
         "PSI": float(result["PSI"]),
         "RDS": float(result["RDS"]),
         "ratings": ratings,
-        "round_winners": round_winners,
         "opponents": {
             round_name: {
                 opponent_team: float(prob)
                 for opponent_team, prob in opponents.items()
             }
             for round_name, opponents in result["opponents"].items()
-        }
+        },
+        "defeated_by": defeated_by,
+        "defeated_teams": defeated_teams,
+        "elimination_history": elimination_history,
     }
 
 @app.get("/rankings")

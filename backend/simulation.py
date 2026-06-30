@@ -100,6 +100,33 @@ def is_eliminated(team_name):
                         return True
     return False
 
+def get_completed_results():
+    defeated_by = {}
+    defeated_teams = defaultdict(list)
+    elimination_history = defaultdict(list)
+
+    for round_name, round_matches in bracket.items():
+        for i, match in enumerate(round_matches):
+            if match["status"] != "done":
+                continue
+
+            winner = match["winner"]
+            loser = (
+                match["team2"]
+                if winner == match["team1"]
+                else match["team1"]
+            )
+
+            defeated_by[loser] = winner
+            defeated_teams[winner].append(loser)
+            elimination_history[loser].append({
+                "round": round_name,
+                "opponent": winner,
+                "match_index": i
+            })
+
+    return defeated_by, defeated_teams, elimination_history
+
 
 # ==============================
 # RESOLVE MATCH
@@ -331,9 +358,19 @@ def get_opponent_probabilities(team_name):
                 else match["team1"]
             )
 
-            results["Round of 32"] = {
-                opponent: 1.0
-            }
+            # Preserve both sides of the completed/opening match so the UI can
+            # distinguish historical defeats from future confirmed opponents.
+            match = bracket["r32"][idx]
+
+            if match["status"] == "done":
+                results["Round of 32"] = {
+                    opponent: 0.0,
+                    team_name: 1.0
+                }
+            else:
+                results["Round of 32"] = {
+                    opponent: 1.0
+                }
             break
 
     if current_match_idx is None:
@@ -395,6 +432,27 @@ def run_model(team_name):
 
     RDS.clear()
     RDS.update(new_rds)
+
+    defeated_by, defeated_teams, elimination_history = get_completed_results()
+
+    print("\n=== DEFEATED TEAMS MAP ===")
+    for winner, losers in defeated_teams.items():
+        print(f"{winner} defeated: {', '.join(losers)}")
+
+    print("\n=== DEFEATED BY MAP ===")
+    for loser, winner in defeated_by.items():
+        print(f"{loser} was defeated by {winner}")
+
+    defeated_teams = {
+        team: list(opponents)
+        for team, opponents in defeated_teams.items()
+    }
+
+    elimination_history = {
+        team: list(events)
+        for team, events in elimination_history.items()
+    }
+
     return {
         "team": team_name,
         "rating": teams[team_name]["rank"],
@@ -402,5 +460,13 @@ def run_model(team_name):
         "PSI": PSI.get(team_name, 0),
         "RDS": RDS.get(team_name, 0),
         "opponents": get_opponent_probabilities(team_name),
-        "eliminated": is_eliminated(team_name)
+        "eliminated": is_eliminated(team_name),
+        "defeated_by": defeated_by.get(team_name),
+        "defeated_teams": defeated_teams.get(team_name, []),
+        "elimination_history": elimination_history.get(team_name, [])
     }
+
+
+if __name__ == "__main__":
+    # Temporary debug entrypoint
+    run_model("Morocco")

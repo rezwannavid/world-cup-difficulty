@@ -21,7 +21,13 @@ type TeamData = {
   RDS: number;
   ratings?: Record<string, number>;
   opponents: Record<string, Record<string, number>>;
-  round_winners?: Record<string, string>;
+  defeated_by?: string | null;
+  defeated_teams?: string[];
+  elimination_history?: {
+    round: string;
+    opponent: string;
+    match_index: number;
+  }[];
   eliminated?: boolean;
 };
 
@@ -86,10 +92,32 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const [view, setView] = useState<"path" | "index">("path");
 
   const ratingOf = (name: string) => data.ratings?.[name];
+  console.log("TEAM:", data.team);
+  console.log("DEFEATED TEAMS:", data.defeated_teams);
+  console.log("OPPONENTS:", data.opponents);
 
   function sortedOpponents(round: string) {
-    const teams = data.opponents[round] ?? {};
-    return Object.entries(teams).sort((a, b) => b[1] - a[1]);
+    // Remove the current team itself from opponent lists.
+    // Completed matches now include both winner (1.0) and loser (0.0),
+    // but the UI should never render the team as its own opponent.
+    const teams = Object.fromEntries(
+      Object.entries(data.opponents[round] ?? {}).filter(
+        ([name]) => name !== data.team
+      )
+    );
+
+    return Object.entries(teams).sort((a, b) => {
+      const aDefeated = data.defeated_teams?.includes(a[0]) ?? false;
+      const bDefeated = data.defeated_teams?.includes(b[0]) ?? false;
+
+      // Defeated teams always come first
+      if (aDefeated !== bDefeated) {
+        return aDefeated ? -1 : 1;
+      }
+
+      // Otherwise sort by probability descending
+      return b[1] - a[1];
+    });
   }
 
   const rounds = ROUND_ORDER.filter((r) => {
@@ -100,12 +128,8 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const pdiTier = tierFromRank(pdiRank, total);
   const rdsTier = tierFromRank(rdsRank, total);
 
-  const hasLivePath = rounds.some((round) => {
-    const entries = Object.values(data.opponents[round] ?? {});
-    return entries.some((prob) => prob > 0);
-  });
-
-  const isEliminated = data.eliminated === true || !hasLivePath;
+  const isEliminated =
+    data.defeated_by != null && (data.win_probability ?? 0) <= 0;
 
   if (isEliminated) {
     return (
@@ -235,7 +259,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             rounds={rounds}
             sortedOpponents={sortedOpponents}
             ratingOf={ratingOf}
-            teamName={data.team}
+            defeatedTeams={data.defeated_teams}
           />
         ) : (
           <IndexView
@@ -248,7 +272,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             total={total}
             pdiTier={pdiTier}
             rdsTier={rdsTier}
-            teamName={data.team}
+            defeatedTeams={data.defeated_teams}
           />
         )}
       </div>
@@ -270,29 +294,34 @@ function PathView({
   rounds,
   sortedOpponents,
   ratingOf,
-  teamName,
+  defeatedTeams,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
   ratingOf: (name: string) => number | undefined;
-  teamName: string;
+  defeatedTeams?: string[];
 }) {
-  const getStatusLabel = (round: string, opponentName: string, prob: number) => {
-    if (prob <= 0) return "Defeated";
-
-    const isAlreadyFaced =
-      round === rounds[0] && teamName === "Brazil" && opponentName === "Japan";
-
-    if (isAlreadyFaced) return "Defeated";
+  const getStatusLabel = (_round: string, opponentName: string, prob: number) => {
+    const wasDefeated =
+      defeatedTeams?.some(
+        (t) => t.trim().toLowerCase() === opponentName.trim().toLowerCase()
+      ) ?? false;
+    console.log("Checking:", opponentName, {
+      defeated: wasDefeated,
+      prob,
+    });
+    if (wasDefeated) return "Defeated";
+    if (prob <= 0) return "Eliminated";
     if (prob >= 0.9999) return "Confirmed";
     return `Chance to Face: ${pct(prob)}`;
   };
 
-  const isCrossedOut = (round: string, opponentName: string, prob: number) => {
-    const isAlreadyFaced =
-      round === rounds[0] && teamName === "Brazil" && opponentName === "Japan";
-
-    return prob <= 0 || isAlreadyFaced;
+  const isCrossedOut = (_round: string, opponentName: string, prob: number) => {
+    const wasDefeated =
+      defeatedTeams?.some(
+        (t) => t.trim().toLowerCase() === opponentName.trim().toLowerCase()
+      ) ?? false;
+    return prob <= 0 || wasDefeated;
   };
 
   return (
@@ -301,8 +330,22 @@ function PathView({
         const entries = sortedOpponents(round);
         if (entries.length === 0) return null;
 
-        const [topName, topProb] = entries[0];
-        const rest = entries.slice(1);
+        // Always prioritize a historically defeated opponent for the headline card,
+        // regardless of probability ordering.
+        const defeatedEntry = entries.find(
+          ([name]) =>
+            defeatedTeams?.some(
+              (t) => t.trim().toLowerCase() === name.trim().toLowerCase()
+            ) ?? false
+        );
+        console.log("Top selection:", {
+          round,
+          entries,
+          defeatedEntry,
+        });
+
+        const [topName, topProb] = defeatedEntry ?? entries[0];
+        const rest = entries.filter(([name]) => name !== topName);
         const topRating = ratingOf(topName);
 
         return (
@@ -407,7 +450,7 @@ function IndexView({
   total,
   pdiTier,
   rdsTier,
-  teamName,
+  defeatedTeams,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
@@ -418,7 +461,7 @@ function IndexView({
   total: number;
   pdiTier: Tier;
   rdsTier: Tier;
-  teamName: string;
+  defeatedTeams?: string[];
 }) {
   return (
     <div className="mt-9">
@@ -427,10 +470,27 @@ function IndexView({
         {rounds.map((round) => {
           const entries = sortedOpponents(round);
           if (entries.length === 0) return null;
-          const [name, prob] = entries[0];
+          const defeatedEntry = entries.find(
+            ([name]) =>
+              defeatedTeams?.some(
+                (t) => t.trim().toLowerCase() === name.trim().toLowerCase()
+              ) ?? false
+          );
+
+          const [name, prob] = defeatedEntry ?? entries[0];
           const rating = ratingOf(name);
-          const isAlreadyFaced = round === rounds[0] && teamName === "Brazil" && name === "Japan";
-          const statusLabel = isAlreadyFaced ? "Defeated" : prob >= 0.9999 ? "Confirmed" : pct(prob);
+          const isDefeated =
+            defeatedTeams?.some(
+              (t) => t.trim().toLowerCase() === name.trim().toLowerCase()
+            ) ?? false;
+          const isEliminated = prob <= 0 && !isDefeated;
+          const statusLabel = isDefeated
+            ? "Defeated"
+            : isEliminated
+              ? "Eliminated"
+              : prob >= 0.9999
+                ? "Confirmed"
+                : pct(prob);
           return (
             <div
               key={round}
@@ -450,7 +510,7 @@ function IndexView({
                     className="h-6 w-9 rounded-sm object-cover shadow-sm"
                   />
                 )}
-                <span className={`text-lg font-bold ${prob <= 0 || isAlreadyFaced ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                <span className={`text-lg font-bold ${isDefeated || prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
                   {name}
                 </span>
               </div>
