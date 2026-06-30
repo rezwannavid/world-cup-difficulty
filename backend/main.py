@@ -51,9 +51,17 @@ def cached_rankings(sort: str = "psi"):
 def root():
     return {"message": "TPDA API Running"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/teams")
 def get_teams():
-    return list(teams.keys())
+    try:
+        return list(teams.keys())
+    except Exception as e:
+        print("Teams route failed:", e)
+        return {"error": "Server warming up"}, 503
 
 @app.get("/team/{team_name}")
 def get_team(team_name: str):

@@ -15,11 +15,36 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    axios
-      .get(`${process.env.NEXT_PUBLIC_API_URL}/teams`)
-      .then((res) => setTeams(res.data))
-      .catch(() => setTeams([]));
-  }, []);
+  const fetchTeams = async (retries = 3) => {
+    try {
+      console.log("Fetching from:", process.env.NEXT_PUBLIC_API_URL);
+
+      setLoading(true);
+
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/teams`,
+        {
+          timeout: 10000, // wait max 10 seconds
+        }
+      );
+
+      setTeams(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Teams fetch failed:", err);
+
+      if (retries > 0) {
+        console.log(`Retrying... (${retries} left)`);
+        setTimeout(() => fetchTeams(retries - 1), 2000);
+      } else {
+        setTeams([]);
+        setLoading(false);
+      }
+    }
+  };
+
+  fetchTeams();
+}, []);
 
   return (
     <main className="page-transition mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
