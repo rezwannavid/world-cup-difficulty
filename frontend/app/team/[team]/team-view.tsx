@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -312,6 +312,12 @@ function PathView({
                   topRating != null
                     ? difficultyColor(topRating)
                     : "var(--secondary)",
+                boxShadow:
+                  topProb >= 1
+                    ? `inset 0 0 0 4px color-mix(in srgb, ${
+                        topRating != null ? difficultyColor(topRating) : "var(--secondary)"
+                      } 65%, black)`
+                    : undefined,
               }}
             >
             <div className="flex items-center gap-3">
@@ -336,7 +342,9 @@ function PathView({
                 )}
               </div>
               <p className="mt-0.5 text-xs font-medium text-foreground/75">
-                Chance to Face: {topProb <= 0 ? "0%" : pct(topProb)}
+                {topProb <= 0
+                  ? "Eliminated"
+                  : `Chance to Face: ${pct(topProb)}`}
               </p>
             </div>
 
@@ -369,7 +377,9 @@ function PathView({
                     </span>
                   )}
                   <span className="w-28 text-right text-xs font-medium tabular-nums text-foreground">
-                    Chance to Face: {prob <= 0 ? "0%" : pct(prob)}
+                    {prob <= 0
+                      ? "Eliminated"
+                      : `Chance to Face: ${pct(prob)}`}
                   </span>
                 </div>
               );
@@ -496,8 +506,50 @@ function Metric({
   total: number;
   description: string;
 }) {
+  // Normalize the tier before rendering value color
+  const normalizedTier = tier.trim() as Tier;
+  const resolvedValueColor = tierColor[normalizedTier] ?? "#e07a3f";
+
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [displayValue, setDisplayValue] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || hasAnimated) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+
+        setHasAnimated(true);
+        const target = parseFloat(value);
+        const duration = 1200;
+        const start = performance.now();
+
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setDisplayValue(target * eased);
+
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          }
+        };
+
+        requestAnimationFrame(tick);
+        observer.disconnect();
+      },
+      { threshold: 0.45 }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [value, hasAnimated]);
+
   return (
-    <div>
+    <div ref={ref}>
       <div className="flex items-baseline gap-3">
         <span className="text-3xl font-light tracking-tight text-foreground">
           {abbr}
@@ -508,9 +560,9 @@ function Metric({
       <div className="mt-1 flex items-end gap-4">
         <span
           className="text-5xl font-light tracking-tight tabular-nums"
-          style={{ color: valueColor }}
+          style={{ color: resolvedValueColor }}
         >
-          {value}
+          {displayValue.toFixed(2)}
         </span>
         <div className="pb-2">
           <p className="text-sm font-semibold text-foreground">{tier}</p>

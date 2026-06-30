@@ -31,6 +31,7 @@
   /* PDI / RDS 5-tier difficulty scale */
   --tier-very-hard: #c0392b;
   --tier-hard: #e07a3f;
+  --tier-moderately-hard: #e07a3f;
   --tier-moderate: #e3c93f;
   --tier-easy-ish: #a8d96a;
   --tier-easy: #4fbf73;
@@ -62,6 +63,7 @@
 
   --color-tier-very-hard: var(--tier-very-hard);
   --color-tier-hard: var(--tier-hard);
+  --color-tier-moderately-hard: var(--tier-moderately-hard);
   --color-tier-moderate: var(--tier-moderate);
   --color-tier-easy-ish: var(--tier-easy-ish);
   --color-tier-easy: var(--tier-easy);
