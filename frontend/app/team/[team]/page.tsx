@@ -7,6 +7,10 @@ type TeamData = {
   win_probability: number;
   PSI: number;
   RDS: number;
+  baseline_PSI: number;
+  baseline_RDS: number;
+  delta_PSI: number;
+  delta_RDS: number;
   opponents: Record<string, Record<string, number>>;
   defeated_by?: string | null;
   defeated_teams?: string[];

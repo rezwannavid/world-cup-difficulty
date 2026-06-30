@@ -1,3 +1,4 @@
+import copy
 import math
 import random
 import pandas as pd
@@ -128,6 +129,62 @@ def get_completed_results():
     return defeated_by, defeated_teams, elimination_history
 
 
+def get_baseline_bracket(current_bracket):
+    baseline = copy.deepcopy(current_bracket)
+
+    for round_name, round_matches in baseline.items():
+        for match in round_matches:
+            if match["status"] == "done":
+                match["status"] = "pending"
+            match["winner"] = None
+            if round_name != "r32":
+                match["team1"] = None
+                match["team2"] = None
+
+    return baseline
+
+
+def run_simulation_with_bracket(bracket_override):
+    global bracket
+    original_bracket = bracket
+    bracket = bracket_override
+
+    try:
+        return run_simulation()
+    finally:
+        bracket = original_bracket
+
+
+def initialize_simulation():
+    global bracket, win_probabilities, PSI, RDS, baseline_win_probabilities, baseline_PSI, baseline_RDS
+
+    bracket = load_bracket()
+    new_win_probs, new_psi, new_rds = run_simulation()
+
+    baseline_bracket = get_baseline_bracket(bracket)
+    baseline_win_probs, baseline_psi, baseline_rds = run_simulation_with_bracket(
+        baseline_bracket
+    )
+
+    win_probabilities.clear()
+    win_probabilities.update(new_win_probs)
+
+    PSI.clear()
+    PSI.update(new_psi)
+
+    RDS.clear()
+    RDS.update(new_rds)
+
+    baseline_win_probabilities.clear()
+    baseline_win_probabilities.update(baseline_win_probs)
+
+    baseline_PSI.clear()
+    baseline_PSI.update(baseline_psi)
+
+    baseline_RDS.clear()
+    baseline_RDS.update(baseline_rds)
+
+
 # ==============================
 # RESOLVE MATCH
 # ==============================
@@ -173,6 +230,8 @@ def seed_completed_matches(psi_tracker, match_counter):
 # ==============================
 
 def simulate_once():
+    global _last_sim_bracket
+
     sim_bracket = {
         round_name: [match.copy() for match in matches]
         for round_name, matches in bracket.items()
@@ -210,18 +269,26 @@ def simulate_once():
             if round_name != "final":
                 next_round_name = round_order[r_idx + 1]
                 next_match_idx = i // 2
+                next_match = sim_bracket[next_round_name][next_match_idx]
+
+                if next_match["status"] == "done":
+                    continue
 
                 if i % 2 == 0:
-                    sim_bracket[next_round_name][next_match_idx]["team1"] = winner
-                    sim_bracket[next_round_name][next_match_idx]["status"] = "pending"
+                    if next_match["team1"] is None:
+                        next_match["team1"] = winner
+                    next_match["status"] = "pending"
                 else:
-                    sim_bracket[next_round_name][next_match_idx]["team2"] = winner
-                    sim_bracket[next_round_name][next_match_idx]["status"] = "pending"
+                    if next_match["team2"] is None:
+                        next_match["team2"] = winner
+                    next_match["status"] = "pending"
 
     champion = sim_bracket["final"][0]["winner"]
 
     if champion is None:
         raise Exception("Champion is None")
+
+    _last_sim_bracket = sim_bracket
 
     return champion, psi_tracker, match_counter
 
@@ -415,33 +482,13 @@ def get_opponent_probabilities(team_name):
 win_probabilities = {}
 PSI = {}
 RDS = {}
+baseline_win_probabilities = {}
+baseline_PSI = {}
+baseline_RDS = {}
 
 
-def run_model(team_name):
-    global bracket, win_probabilities, PSI, RDS
-
-    bracket = load_bracket()
-    new_win_probs, new_psi, new_rds = run_simulation()
-
-    win_probabilities.clear()
-    win_probabilities.update(new_win_probs)
-
-    PSI.clear()
-    PSI.update(new_psi)
-    
-
-    RDS.clear()
-    RDS.update(new_rds)
-
+def get_team_data(team_name):
     defeated_by, defeated_teams, elimination_history = get_completed_results()
-
-    print("\n=== DEFEATED TEAMS MAP ===")
-    for winner, losers in defeated_teams.items():
-        print(f"{winner} defeated: {', '.join(losers)}")
-
-    print("\n=== DEFEATED BY MAP ===")
-    for loser, winner in defeated_by.items():
-        print(f"{loser} was defeated by {winner}")
 
     defeated_teams = {
         team: list(opponents)
@@ -453,18 +500,30 @@ def run_model(team_name):
         for team, events in elimination_history.items()
     }
 
+    baseline_psi = baseline_PSI.get(team_name, 0)
+    baseline_rds = baseline_RDS.get(team_name, 0)
+
     return {
         "team": team_name,
         "rating": teams[team_name]["rank"],
         "win_probability": win_probabilities.get(team_name, 0),
         "PSI": PSI.get(team_name, 0),
         "RDS": RDS.get(team_name, 0),
+        "baseline_PSI": baseline_psi,
+        "baseline_RDS": baseline_rds,
+        "delta_PSI": PSI.get(team_name, 0) - baseline_psi,
+        "delta_RDS": RDS.get(team_name, 0) - baseline_rds,
         "opponents": get_opponent_probabilities(team_name),
         "eliminated": is_eliminated(team_name),
         "defeated_by": defeated_by.get(team_name),
         "defeated_teams": defeated_teams.get(team_name, []),
         "elimination_history": elimination_history.get(team_name, [])
     }
+
+
+def run_model(team_name):
+    initialize_simulation()
+    return get_team_data(team_name)
 
 
 if __name__ == "__main__":

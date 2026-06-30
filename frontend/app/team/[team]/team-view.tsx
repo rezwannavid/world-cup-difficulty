@@ -19,6 +19,10 @@ type TeamData = {
   win_probability: number;
   PSI: number;
   RDS: number;
+  baseline_PSI: number;
+  baseline_RDS: number;
+  delta_PSI: number;
+  delta_RDS: number;
   ratings?: Record<string, number>;
   opponents: Record<string, Record<string, number>>;
   defeated_by?: string | null;
@@ -90,6 +94,7 @@ function ArrowRight() {
 export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const router = useRouter();
   const [view, setView] = useState<"path" | "index">("path");
+  const [showDelta, setShowDelta] = useState(false);
 
   const ratingOf = (name: string) => data.ratings?.[name];
   console.log("TEAM:", data.team);
@@ -273,9 +278,35 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             pdiTier={pdiTier}
             rdsTier={rdsTier}
             defeatedTeams={data.defeated_teams}
+            showDelta={showDelta}
           />
         )}
       </div>
+
+      {view === "index" ? (
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={() => setShowDelta(false)}
+            className={`btn-animate rounded-full px-4 py-2 text-sm font-semibold transition ${
+              !showDelta
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-secondary text-secondary-foreground"
+            }`}
+          >
+            Main value
+          </button>
+          <button
+            onClick={() => setShowDelta(true)}
+            className={`btn-animate rounded-full px-4 py-2 text-sm font-semibold transition ${
+              showDelta
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-secondary text-secondary-foreground"
+            }`}
+          >
+            Delta value
+          </button>
+        </div>
+      ) : null}
 
       <footer className="mt-12 text-center text-xs text-muted-foreground">
         made by Rezwan Navid
@@ -451,6 +482,7 @@ function IndexView({
   pdiTier,
   rdsTier,
   defeatedTeams,
+  showDelta,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
@@ -462,6 +494,7 @@ function IndexView({
   pdiTier: Tier;
   rdsTier: Tier;
   defeatedTeams?: string[];
+  showDelta: boolean;
 }) {
   return (
     <div className="mt-9">
@@ -532,7 +565,9 @@ function IndexView({
         <Metric
           abbr="PDI"
           name="Path Difficulty Index"
-          value={data.PSI.toFixed(2)}
+          value={showDelta ? data.delta_PSI.toFixed(2) : data.PSI.toFixed(2)}
+          delta={data.delta_PSI}
+          showDelta={showDelta}
           valueColor={tierColor[pdiTier]}
           tier={pdiTier}
           rank={pdiRank}
@@ -543,7 +578,9 @@ function IndexView({
         <Metric
           abbr="RDS"
           name="Relative Difficulty Score"
-          value={data.RDS.toFixed(2)}
+          value={showDelta ? data.delta_RDS.toFixed(2) : data.RDS.toFixed(2)}
+          delta={data.delta_RDS}
+          showDelta={showDelta}
           valueColor={tierColor[rdsTier]}
           tier={rdsTier}
           rank={rdsRank}
@@ -559,6 +596,8 @@ function Metric({
   abbr,
   name,
   value,
+  delta,
+  showDelta,
   valueColor,
   tier,
   rank,
@@ -568,6 +607,8 @@ function Metric({
   abbr: string;
   name: string;
   value: string;
+  delta: number;
+  showDelta: boolean;
   valueColor: string;
   tier: string;
   rank: number;
@@ -626,12 +667,17 @@ function Metric({
       </div>
 
       <div className="mt-1 flex items-end gap-4">
-        <span
-          className="text-5xl font-light tracking-tight tabular-nums"
-          style={{ color: resolvedValueColor }}
-        >
-          {displayValue.toFixed(2)}
-        </span>
+        <div>
+          <span
+            className="text-5xl font-light tracking-tight tabular-nums"
+            style={{ color: resolvedValueColor }}
+          >
+            {displayValue.toFixed(2)}
+          </span>
+          <div className="mt-1 text-sm font-semibold" style={{ color: delta >= 0 ? "#22c55e" : "#f97316" }}>
+            {delta >= 0 ? "+" : ""}{delta.toFixed(0)}
+          </div>
+        </div>
         <div className="pb-2">
           <p className="text-sm font-semibold" style={{ color: tierColor[normalizedTier] ?? resolvedValueColor }}>
             {tier}
@@ -652,14 +698,24 @@ function Metric({
           const numericValue = parseFloat(value) || 0;
           let min = 0;
           let max = 1;
-          if (abbr === "PDI") {
-            // observed tournament PDI bounds
-            min = 1764;
-            max = 2077;
-          } else if (abbr === "RDS") {
-            // observed tournament RDS bounds
-            min = 0.8;
-            max = 1.3;
+          if (showDelta) {
+            if (abbr === "PDI") {
+              min = -100;
+              max = 100;
+            } else if (abbr === "RDS") {
+              min = -0.4;
+              max = 0.4;
+            }
+          } else {
+            if (abbr === "PDI") {
+              // observed tournament PDI bounds
+              min = 1764;
+              max = 2077;
+            } else if (abbr === "RDS") {
+              // observed tournament RDS bounds
+              min = 0.8;
+              max = 1.3;
+            }
           }
 
           const range = Math.max(max - min, 1e-6);

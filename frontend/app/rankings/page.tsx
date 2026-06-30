@@ -8,7 +8,11 @@ import { getFlagUrl } from "../lib/flags";
 type Ranking = {
   team: string;
   PSI: number;
+  baseline_PSI?: number;
+  delta_PSI?: number;
   RDS: number;
+  baseline_RDS?: number;
+  delta_RDS?: number;
   win_probability: number;
   eliminated: boolean;
 };
@@ -106,6 +110,15 @@ export default async function RankingsPage({
           // Ascending (easiest → hardest): 32 → 1
           const rank = direction === "asc" ? total - index : index + 1;
           const tier = tierFromRank(rank, total);
+          const isPsiSelected = metric === "psi";
+          const selectedDelta = isPsiSelected ? team.delta_PSI : team.delta_RDS;
+          const deltaSign = selectedDelta != null ? (selectedDelta >= 0 ? "+" : "-") : "";
+          const deltaClass = team.eliminated
+            ? "text-white/50"
+            : selectedDelta != null && selectedDelta >= 0
+            ? "text-emerald-400"
+            : "text-orange-400";
+
           return (
             <Link
               key={team.team}
@@ -140,9 +153,15 @@ export default async function RankingsPage({
               </div>
               <span className={`w-14 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
                 {team.PSI.toFixed(0)}
+                {isPsiSelected && selectedDelta != null ? (
+                  <span className={`ml-2 ${deltaClass}`}>{deltaSign}</span>
+                ) : null}
               </span>
-              <span className={`w-16 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground/80"}`}>
+              <span className={`w-16 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
                 {team.RDS.toFixed(1)}
+                {!isPsiSelected && selectedDelta != null ? (
+                  <span className={`ml-2 ${deltaClass}`}>{deltaSign}</span>
+                ) : null}
               </span>
             </Link>
           );

@@ -1,6 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from simulation import run_model, teams, PSI, RDS, win_probabilities
+from simulation import (
+    run_model,
+    teams,
+    PSI,
+    RDS,
+    win_probabilities,
+    baseline_PSI,
+    baseline_RDS,
+)
 from functools import lru_cache
 
 
@@ -24,19 +32,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def ensure_simulation_initialized():
+    if not teams:
+        return
+
+    if not PSI or len(PSI) < len(teams):
+        run_model(next(iter(teams)))
+
+
 def cached_team(team_name: str):
+    ensure_simulation_initialized()
     return run_model(team_name)
 
 @lru_cache(maxsize=4)
 def cached_rankings(sort: str = "psi", order: str = "desc"):
+    ensure_simulation_initialized()
     data = []
 
     for team in teams:
+        baseline_psi = baseline_PSI.get(team, 0)
+        baseline_rds = baseline_RDS.get(team, 0)
         data.append({
             "team": team,
             "PSI": PSI[team],
+            "baseline_PSI": baseline_psi,
+            "delta_PSI": PSI[team] - baseline_psi,
             "RDS": RDS[team],
-            "win_probability": win_probabilities.get(team, 0)
+            "baseline_RDS": baseline_rds,
+            "delta_RDS": RDS[team] - baseline_rds,
+            "win_probability": win_probabilities.get(team, 0),
+            "eliminated": win_probabilities.get(team, 0) <= 0,
         })
 
     reverse = order == "desc"
@@ -90,6 +115,10 @@ def get_team(team_name: str):
         "win_probability": float(result["win_probability"]),
         "PSI": float(result["PSI"]),
         "RDS": float(result["RDS"]),
+        "baseline_PSI": float(result.get("baseline_PSI", 0)),
+        "baseline_RDS": float(result.get("baseline_RDS", 0)),
+        "delta_PSI": float(result.get("delta_PSI", 0)),
+        "delta_RDS": float(result.get("delta_RDS", 0)),
         "ratings": ratings,
         "opponents": {
             round_name: {
@@ -101,6 +130,7 @@ def get_team(team_name: str):
         "defeated_by": defeated_by,
         "defeated_teams": defeated_teams,
         "elimination_history": elimination_history,
+        "eliminated": bool(result.get("eliminated", False)),
     }
 
 @app.get("/rankings")
