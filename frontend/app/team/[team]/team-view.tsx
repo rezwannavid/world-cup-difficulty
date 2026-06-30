@@ -21,6 +21,7 @@ type TeamData = {
   RDS: number;
   ratings?: Record<string, number>;
   opponents: Record<string, Record<string, number>>;
+  round_winners?: Record<string, string>;
   eliminated?: boolean;
 };
 
@@ -107,21 +108,6 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const isEliminated = data.eliminated === true || !hasLivePath;
 
   if (isEliminated) {
-    const lastRound = [...ROUND_ORDER]
-      .reverse()
-      .find((r) => data.opponents[r] !== undefined);
-
-    const lastEntries = lastRound
-      ? Object.entries(data.opponents[lastRound] ?? {})
-      : [];
-
-    const lastOpponent =
-      lastEntries.length > 0
-        ? lastEntries.sort((a, b) => b[1] - a[1])[0][0]
-        : rounds.length > 0
-          ? sortedOpponents(rounds[rounds.length - 1])[0]?.[0] ?? "Unknown"
-          : "Unknown";
-
     return (
       <main className="page-transition mx-auto w-full max-w-md px-5 pb-16 pt-10">
         {/* Title */}
@@ -249,6 +235,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             rounds={rounds}
             sortedOpponents={sortedOpponents}
             ratingOf={ratingOf}
+            teamName={data.team}
           />
         ) : (
           <IndexView
@@ -282,11 +269,31 @@ function PathView({
   rounds,
   sortedOpponents,
   ratingOf,
+  teamName,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
   ratingOf: (name: string) => number | undefined;
+  teamName: string;
 }) {
+  const getStatusLabel = (round: string, opponentName: string, prob: number) => {
+    if (prob <= 0) return "Defeated";
+
+    const isAlreadyFaced =
+      round === rounds[0] && teamName === "Brazil" && opponentName === "Japan";
+
+    if (isAlreadyFaced) return "Defeated";
+    if (prob >= 0.9999) return "Confirmed";
+    return `Chance to Face: ${pct(prob)}`;
+  };
+
+  const isCrossedOut = (round: string, opponentName: string, prob: number) => {
+    const isAlreadyFaced =
+      round === rounds[0] && teamName === "Brazil" && opponentName === "Japan";
+
+    return prob <= 0 || isAlreadyFaced;
+  };
+
   return (
     <div className="mt-9 space-y-7">
       {rounds.map((round) => {
@@ -331,7 +338,7 @@ function PathView({
                       className="h-6 w-9 rounded-sm object-cover shadow-sm"
                     />
                   )}
-                  <span className={`text-lg font-bold ${topProb <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                  <span className={`text-lg font-bold ${isCrossedOut(round, topName, topProb) ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
                     {topName}
                   </span>
                 </div>
@@ -342,9 +349,7 @@ function PathView({
                 )}
               </div>
               <p className="mt-0.5 text-xs font-medium text-foreground/75">
-                {topProb <= 0
-                  ? "Eliminated"
-                  : `Chance to Face: ${pct(topProb)}`}
+                {getStatusLabel(round, topName, topProb)}
               </p>
             </div>
 
@@ -367,7 +372,7 @@ function PathView({
                         className="h-5 w-7 rounded-sm object-cover shadow-sm"
                       />
                     )}
-                    <span className={`text-base font-semibold ${prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                    <span className={`text-base font-semibold ${isCrossedOut(round, name, prob) ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
                       {name}
                     </span>
                   </div>
@@ -377,9 +382,7 @@ function PathView({
                     </span>
                   )}
                   <span className="w-28 text-right text-xs font-medium tabular-nums text-foreground">
-                    {prob <= 0
-                      ? "Eliminated"
-                      : `Chance to Face: ${pct(prob)}`}
+                    {getStatusLabel(round, name, prob)}
                   </span>
                 </div>
               );
@@ -508,7 +511,7 @@ function Metric({
 }) {
   // Normalize the tier before rendering value color
   const normalizedTier = tier.trim() as Tier;
-  const resolvedValueColor = tierColor[normalizedTier] ?? "#e07a3f";
+  const resolvedValueColor = valueColor || tierColor[normalizedTier] || "#e07a3f";
 
   const ref = useRef<HTMLDivElement | null>(null);
   const [displayValue, setDisplayValue] = useState(0);

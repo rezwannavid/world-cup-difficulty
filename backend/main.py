@@ -78,6 +78,17 @@ def get_team(team_name: str):
         for opponent_team in opponents:
             ratings[opponent_team] = team_rating(opponent_team)
 
+    # Compute per-round "primary path winner" based on highest probability
+    round_winners = {}
+
+    for round_name, opponents in result["opponents"].items():
+        if not opponents:
+            continue
+
+        # pick opponent with highest probability in this round
+        winner_team = max(opponents.items(), key=lambda x: x[1])[0]
+        round_winners[round_name] = winner_team
+
     return {
         "team": result["team"],
         "rating": float(result["rating"]),
@@ -85,6 +96,7 @@ def get_team(team_name: str):
         "PSI": float(result["PSI"]),
         "RDS": float(result["RDS"]),
         "ratings": ratings,
+        "round_winners": round_winners,
         "opponents": {
             round_name: {
                 opponent_team: float(prob)
