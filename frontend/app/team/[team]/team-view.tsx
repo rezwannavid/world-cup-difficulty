@@ -603,12 +603,19 @@ function Metric({
           }
 
           const range = Math.max(max - min, 1e-6);
-          let pctFilled = ((numericValue - min) / range) * 100;
-          if (!Number.isFinite(pctFilled)) pctFilled = 0;
-          pctFilled = Math.max(0, Math.min(100, pctFilled));
+          // final percentage position for the target numeric value
+          let finalPct = ((numericValue - min) / range) * 100;
+          if (!Number.isFinite(finalPct)) finalPct = 0;
+          finalPct = Math.max(0, Math.min(100, finalPct));
+
+          // progress ratio from the animated counter (0 -> 1)
+          const progressRatio = numericValue > 0 ? Math.max(0, Math.min(1, displayValue / numericValue)) : 0;
+          const pctFilled = finalPct * progressRatio;
 
           const trackColor = "var(--muted)";
           const fillColor = resolvedValueColor;
+
+          const labelValue = displayValue;
 
           return (
             <div>
@@ -630,7 +637,7 @@ function Metric({
                   className="absolute text-foreground font-medium"
                   style={{ left: `${pctFilled}%`, transform: 'translateX(-50%)' }}
                 >
-                  {abbr === "PDI" ? Number(numericValue).toFixed(0) : numericValue.toFixed(2)}
+                  {abbr === "PDI" ? Number(labelValue).toFixed(0) : labelValue.toFixed(2)}
                 </span>
               </div>
             </div>
