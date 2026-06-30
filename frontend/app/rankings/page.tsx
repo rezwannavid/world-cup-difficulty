@@ -101,7 +101,10 @@ export default async function RankingsPage({
         </div>
 
         {visibleData.map((team, index) => {
-          const rank = index + 1;
+          // Keep the real rank consistent no matter how the list is sorted.
+          // Descending (hardest → easiest): 1 → 32
+          // Ascending (easiest → hardest): 32 → 1
+          const rank = direction === "asc" ? total - index : index + 1;
           const tier = tierFromRank(rank, total);
           return (
             <Link
