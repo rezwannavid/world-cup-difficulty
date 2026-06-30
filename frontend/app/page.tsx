@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { getFlagUrl } from "./lib/flags";
 
 export default function Home() {
   const [teams, setTeams] = useState<string[]>([]);
@@ -51,8 +52,19 @@ export default function Home() {
             onClick={() => setDropdownOpen((v) => !v)}
             className="btn-animate flex w-full items-center justify-between rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
           >
-            <span>
-              {selectedTeam === "" ? "Select a team" : selectedTeam}
+            <span className="flex items-center gap-3">
+              {selectedTeam !== "" && getFlagUrl(selectedTeam) && (
+                <Image
+                  src={getFlagUrl(selectedTeam)!}
+                  alt={`${selectedTeam} flag`}
+                  width={28}
+                  height={20}
+                  className="h-5 w-7 rounded-sm object-cover shadow-sm"
+                />
+              )}
+              <span>
+                {selectedTeam === "" ? "Select a team" : selectedTeam}
+              </span>
             </span>
 
             <svg
@@ -79,9 +91,18 @@ export default function Home() {
                     setSelectedTeam(team);
                     setDropdownOpen(false);
                   }}
-                  className="w-full px-5 py-3 text-left text-sm text-secondary-foreground hover:bg-secondary"
+                  className="flex w-full items-center gap-3 px-5 py-3 text-left text-sm text-secondary-foreground hover:bg-secondary"
                 >
-                  {team}
+                  {getFlagUrl(team) && (
+                    <Image
+                      src={getFlagUrl(team)!}
+                      alt={`${team} flag`}
+                      width={28}
+                      height={20}
+                      className="h-5 w-7 rounded-sm object-cover shadow-sm"
+                    />
+                  )}
+                  <span>{team}</span>
                 </button>
               ))}
             </div>

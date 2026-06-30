@@ -1,6 +1,9 @@
 import axios from "axios";
+import Image from "next/image";
 import Link from "next/link";
-import { tierBg, tierColor, tierFromRank } from "../lib/difficulty";
+import { tierBg, tierFromRank } from "../lib/difficulty";
+
+import { getFlagUrl } from "../lib/flags";
 
 type Ranking = {
   team: string;
@@ -88,7 +91,7 @@ export default async function RankingsPage({
       <div className="mt-6 overflow-hidden rounded-md border border-border">
         <div className="flex items-center gap-3 bg-secondary px-4 py-2.5 text-xs font-medium text-muted-foreground">
           <span className="w-7">#</span>
-          <span className="flex-1">Team</span>
+          <span className="flex-1 pl-12">Team</span>
           <span className="w-14 text-right">PDI</span>
           <span className="w-16 text-right">RDS</span>
         </div>
@@ -106,16 +109,28 @@ export default async function RankingsPage({
               <span className={`w-7 text-sm font-semibold tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground/80"}`}>
                 {rank}
               </span>
-              <span className="flex-1">
-                <span
-                  className={`block text-base font-bold ${team.eliminated ? "line-through decoration-2 decoration-white text-white opacity-50" : "text-foreground"}`}
-                >
-                  {team.team}
+              <div className="flex flex-1 items-center gap-3">
+                {getFlagUrl(team.team) && (
+                  <Image
+                    src={getFlagUrl(team.team)!}
+                    alt={`${team.team} flag`}
+                    width={36}
+                    height={24}
+                    className={`h-6 w-9 rounded-sm object-cover shadow-sm ${team.eliminated ? "opacity-50" : ""}`}
+                  />
+                )}
+
+                <span>
+                  <span
+                    className={`block text-base font-bold ${team.eliminated ? "line-through decoration-2 decoration-white text-white opacity-50" : "text-foreground"}`}
+                  >
+                    {team.team}
+                  </span>
+                  <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-foreground/75">
+                    {tier}
+                  </span>
                 </span>
-                <span className="text-[0.7rem] font-semibold uppercase tracking-wider text-foreground/75">
-                  {tier}
-                </span>
-              </span>
+              </div>
               <span className={`w-14 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
                 {team.PSI.toFixed(0)}
               </span>

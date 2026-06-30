@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   difficultyColor,
@@ -10,6 +11,7 @@ import {
   tierFromRank,
   type Tier,
 } from "../../lib/difficulty";
+import { getFlagUrl } from "../../lib/flags";
 
 type TeamData = {
   team: string;
@@ -89,28 +91,86 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
     return Object.entries(teams).sort((a, b) => b[1] - a[1]);
   }
 
-  const rounds = ROUND_ORDER.filter((r) => data.opponents[r]);
+  const rounds = ROUND_ORDER.filter((r) => {
+    const entries = data.opponents[r];
+    return entries && Object.keys(entries).length > 0;
+  });
 
   const pdiTier = tierFromRank(pdiRank, total);
   const rdsTier = tierFromRank(rdsRank, total);
 
-  if (data.eliminated) {
+  const hasLivePath = rounds.some((round) => {
+    const entries = Object.values(data.opponents[round] ?? {});
+    return entries.some((prob) => prob > 0);
+  });
+
+  const isEliminated = data.eliminated === true || !hasLivePath;
+
+  if (isEliminated) {
+    const lastRound = [...ROUND_ORDER]
+      .reverse()
+      .find((r) => data.opponents[r] !== undefined);
+
+    const lastEntries = lastRound
+      ? Object.entries(data.opponents[lastRound] ?? {})
+      : [];
+
+    const lastOpponent =
+      lastEntries.length > 0
+        ? lastEntries.sort((a, b) => b[1] - a[1])[0][0]
+        : rounds.length > 0
+          ? sortedOpponents(rounds[rounds.length - 1])[0]?.[0] ?? "Unknown"
+          : "Unknown";
+
     return (
-      <main className="mx-auto w-full max-w-md px-5 py-16 text-center">
-        <h1 className="text-3xl font-bold text-foreground">
-          {data.team} has been eliminated
+      <main className="mx-auto w-full max-w-md px-5 pb-16 pt-10">
+        {/* Title */}
+        <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
+          <span className="inline-flex flex-wrap items-center gap-2">
+            {getFlagUrl(data.team) && (
+              <Image
+                src={getFlagUrl(data.team)!}
+                alt={`${data.team} flag`}
+                width={36}
+                height={24}
+                className="h-6 w-9 rounded-sm object-cover shadow-sm"
+              />
+            )}
+            <span className="whitespace-nowrap text-primary">
+              {data.team}&apos;s
+            </span>
+            <span className="text-muted-foreground">
+              Possible Path to Finals
+            </span>
+          </span>
         </h1>
 
-        <p className="mt-3 text-sm text-muted-foreground">
-          This team is no longer in the tournament.
-        </p>
+        {/* Actions */}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            onClick={() => router.push("/")}
+            className="btn-animate inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground"
+          >
+            <ArrowLeft />
+            Change Team
+          </button>
+          <button
+            onClick={() => setView("index")}
+            className="btn-animate inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+          >
+            See Difficulty Index
+            <ArrowRight />
+          </button>
+        </div>
 
-        <button
-          onClick={() => router.push("/")}
-          className="btn-animate mt-6 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-        >
-          Change Team
-        </button>
+        {/* Eliminated message */}
+        <div className="mt-20">
+          <h2 className="text-[2rem] font-medium leading-[1.2] tracking-tight text-muted-foreground">
+            Your team was knocked out
+            <br />
+            of the tournament.
+          </h2>
+        </div>
       </main>
     );
   }
@@ -118,10 +178,25 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   return (
     <main className="mx-auto w-full max-w-md px-5 pb-16 pt-10">
       {/* Title */}
-      <h1 className="text-pretty text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
-        <span className="text-primary">{data.team}&apos;s </span>
-        <span className="text-muted-foreground">
-          {view === "path" ? "Possible Path to Finals" : "Difficulty to Final Index"}
+      <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
+        <span className="inline-flex flex-wrap items-center gap-2">
+          {getFlagUrl(data.team) && (
+            <Image
+              src={getFlagUrl(data.team)!}
+              alt={`${data.team} flag`}
+              width={36}
+              height={24}
+              className="h-6 w-9 rounded-sm object-cover shadow-sm"
+            />
+          )}
+          <span className="whitespace-nowrap text-primary">
+            {data.team}&apos;s
+          </span>
+          <span className="text-muted-foreground">
+            {view === "path"
+              ? "Possible Path to Finals"
+              : "Difficulty to Final Index"}
+          </span>
         </span>
       </h1>
 
@@ -238,9 +313,20 @@ function PathView({
               }}
             >
             <div className="flex items-center gap-3">
-                <span className={`flex-1 text-lg font-bold ${topProb <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
-                  {topName}
-                </span>
+                <div className="flex flex-1 items-center gap-3">
+                  {getFlagUrl(topName) && (
+                    <Image
+                      src={getFlagUrl(topName)!}
+                      alt={`${topName} flag`}
+                      width={36}
+                      height={24}
+                      className="h-6 w-9 rounded-sm object-cover shadow-sm"
+                    />
+                  )}
+                  <span className={`text-lg font-bold ${topProb <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                    {topName}
+                  </span>
+                </div>
                 {topRating != null && topRating > 0 && (
                   <span className="text-sm font-medium tabular-nums text-foreground/80">
                     {formatPoints(topRating)}
@@ -261,9 +347,20 @@ function PathView({
                   className="flex items-center gap-3 border-b border-border px-4 py-2.5"
                   style={{ opacity: Math.max(0.45, Math.min(1, prob + 0.25)) }}
                 >
-                  <span className={`flex-1 text-base font-semibold ${prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
-                    {name}
-                  </span>
+                  <div className="flex flex-1 items-center gap-3">
+                    {getFlagUrl(name) && (
+                      <Image
+                        src={getFlagUrl(name)!}
+                        alt={`${name} flag`}
+                        width={28}
+                        height={20}
+                        className="h-5 w-7 rounded-sm object-cover shadow-sm"
+                      />
+                    )}
+                    <span className={`text-base font-semibold ${prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                      {name}
+                    </span>
+                  </div>
                   {rating != null && rating > 0 && (
                     <span className="text-xs tabular-nums text-muted-foreground">
                       {formatPoints(rating)}
@@ -323,9 +420,20 @@ function IndexView({
                   rating != null ? difficultyColor(rating) : "var(--secondary)",
               }}
             >
-              <span className="flex-1 text-lg font-bold text-foreground">
-                {name}
-              </span>
+              <div className="flex flex-1 items-center gap-3">
+                {getFlagUrl(name) && (
+                  <Image
+                    src={getFlagUrl(name)!}
+                    alt={`${name} flag`}
+                    width={36}
+                    height={24}
+                    className="h-6 w-9 rounded-sm object-cover shadow-sm"
+                  />
+                )}
+                <span className="text-lg font-bold text-foreground">
+                  {name}
+                </span>
+              </div>
               {rating != null && rating > 0 && (
                 <span className="text-sm font-medium tabular-nums text-foreground/80">
                   {formatPoints(rating)}
