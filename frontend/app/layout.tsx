@@ -29,7 +29,9 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased bg-background`}
     >
       <body className="min-h-full bg-background text-foreground">
-        {children}
+        <div className="page-transition min-h-full">
+          {children}
+        </div>
       </body>
     </html>
   );

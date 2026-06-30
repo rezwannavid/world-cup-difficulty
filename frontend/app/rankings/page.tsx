@@ -32,7 +32,7 @@ export default async function RankingsPage({
   const total = visibleData.length;
 
   return (
-    <main className="mx-auto w-full max-w-md px-5 pb-16 pt-10">
+    <main className="page-transition mx-auto w-full max-w-md px-5 pb-16 pt-10">
       <h1 className="text-pretty text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
         <span className="text-primary">Full </span>
         <span className="text-muted-foreground">Difficulty Rankings</span>

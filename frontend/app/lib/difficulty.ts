@@ -39,37 +39,37 @@ export function formatPoints(points: number): string {
 
 export type Tier =
   | "Very Hard"
+  | "Hard"
   | "Moderately Hard"
   | "Moderate"
-  | "Moderately Easy"
-  | "Easy";
+  | "Moderately Easy";
 
 export function tierFromRank(rank: number, total = 32): Tier {
   // Scale the 32-based thresholds to whatever the field size is.
   const f = total / 32;
   if (rank <= 8 * f) return "Very Hard";
-  if (rank <= 15 * f) return "Moderately Hard";
-  if (rank <= 22 * f) return "Moderate";
-  if (rank <= 27 * f) return "Moderately Easy";
-  return "Easy";
+  if (rank <= 15 * f) return "Hard";
+  if (rank <= 22 * f) return "Moderately Hard";
+  if (rank <= 27 * f) return "Moderate";
+  return "Moderately Easy";
 }
 
 export const tierColor: Record<Tier, string> = {
   "Very Hard": "var(--tier-very-hard)",
-  "Moderately Hard": "var(--tier-hard)",
+  Hard: "var(--tier-hard)",
+  "Moderately Hard": "var(--tier-moderately-hard)",
   Moderate: "var(--tier-moderate)",
   "Moderately Easy": "var(--tier-easy-ish)",
-  Easy: "var(--tier-easy)",
 };
 
 // Translucent version for row backgrounds.
 export function tierBg(tier: Tier, alpha = 0.85): string {
   const hsl: Record<Tier, string> = {
     "Very Hard": "6 64% 46%",
+    Hard: "14 72% 50%",
     "Moderately Hard": "22 73% 56%",
     Moderate: "49 75% 56%",
     "Moderately Easy": "84 56% 63%",
-    Easy: "142 43% 53%",
   };
   return `hsl(${hsl[tier]} / ${alpha})`;
 }

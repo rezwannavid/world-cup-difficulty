@@ -123,7 +123,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
           : "Unknown";
 
     return (
-      <main className="mx-auto w-full max-w-md px-5 pb-16 pt-10">
+      <main className="page-transition mx-auto w-full max-w-md px-5 pb-16 pt-10">
         {/* Title */}
         <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
           <span className="inline-flex flex-wrap items-center gap-2">
@@ -176,7 +176,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-5 pb-16 pt-10">
+    <main className="page-transition mx-auto w-full max-w-md px-5 pb-16 pt-10">
       {/* Title */}
       <h1 className="text-[2.6rem] font-extrabold leading-[1.05] tracking-tight">
         <span className="inline-flex flex-wrap items-center gap-2">
@@ -243,25 +243,27 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
       </div>
 
       {/* Body */}
-      {view === "path" ? (
-        <PathView
-          rounds={rounds}
-          sortedOpponents={sortedOpponents}
-          ratingOf={ratingOf}
-        />
-      ) : (
-        <IndexView
-          data={data}
-          rounds={rounds}
-          sortedOpponents={sortedOpponents}
-          ratingOf={ratingOf}
-          pdiRank={pdiRank}
-          rdsRank={rdsRank}
-          total={total}
-          pdiTier={pdiTier}
-          rdsTier={rdsTier}
-        />
-      )}
+      <div key={view} className="page-transition">
+        {view === "path" ? (
+          <PathView
+            rounds={rounds}
+            sortedOpponents={sortedOpponents}
+            ratingOf={ratingOf}
+          />
+        ) : (
+          <IndexView
+            data={data}
+            rounds={rounds}
+            sortedOpponents={sortedOpponents}
+            ratingOf={ratingOf}
+            pdiRank={pdiRank}
+            rdsRank={rdsRank}
+            total={total}
+            pdiTier={pdiTier}
+            rdsTier={rdsTier}
+          />
+        )}
+      </div>
 
       <footer className="mt-12 text-center text-xs text-muted-foreground">
         made by Rezwan Navid

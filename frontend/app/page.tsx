@@ -22,7 +22,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
+    <main className="page-transition mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
       {/* Header artwork slot */}
       <div className="mb-8 w-full overflow-hidden rounded-lg">
         <Image
