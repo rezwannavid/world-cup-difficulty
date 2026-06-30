@@ -28,7 +28,7 @@ app.add_middleware(
 def cached_team(team_name: str):
     return run_model(team_name)
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=4)
 def cached_rankings(sort: str = "psi", order: str = "desc"):
     data = []
 
@@ -46,6 +46,8 @@ def cached_rankings(sort: str = "psi", order: str = "desc"):
         data.sort(key=lambda x: x["RDS"], reverse=reverse)
     else:
         data.sort(key=lambda x: x["PSI"], reverse=reverse)
+
+    print("TOP 3:", [(x["team"], x["PSI"], x["RDS"]) for x in data[:3]])
 
     return data
 
@@ -94,4 +96,15 @@ def get_team(team_name: str):
 
 @app.get("/rankings")
 def rankings(sort: str = "psi", order: str = "desc"):
+    sort = sort.lower()
+    order = order.lower()
+
+    # Clear stale cache if invalid params change
+    if sort not in ["psi", "rds"]:
+        sort = "psi"
+    if order not in ["asc", "desc"]:
+        order = "desc"
+
+    print("SORT:", sort, "ORDER:", order)
+
     return cached_rankings(sort, order)
