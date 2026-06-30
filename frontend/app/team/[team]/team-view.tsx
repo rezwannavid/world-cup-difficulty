@@ -248,6 +248,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             total={total}
             pdiTier={pdiTier}
             rdsTier={rdsTier}
+            teamName={data.team}
           />
         )}
       </div>
@@ -406,6 +407,7 @@ function IndexView({
   total,
   pdiTier,
   rdsTier,
+  teamName,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
@@ -416,6 +418,7 @@ function IndexView({
   total: number;
   pdiTier: Tier;
   rdsTier: Tier;
+  teamName: string;
 }) {
   return (
     <div className="mt-9">
@@ -426,6 +429,8 @@ function IndexView({
           if (entries.length === 0) return null;
           const [name, prob] = entries[0];
           const rating = ratingOf(name);
+          const isAlreadyFaced = round === rounds[0] && teamName === "Brazil" && name === "Japan";
+          const statusLabel = isAlreadyFaced ? "Defeated" : prob >= 0.9999 ? "Confirmed" : pct(prob);
           return (
             <div
               key={round}
@@ -445,7 +450,7 @@ function IndexView({
                     className="h-6 w-9 rounded-sm object-cover shadow-sm"
                   />
                 )}
-                <span className="text-lg font-bold text-foreground">
+                <span className={`text-lg font-bold ${prob <= 0 || isAlreadyFaced ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
                   {name}
                 </span>
               </div>
@@ -455,7 +460,7 @@ function IndexView({
                 </span>
               )}
               <span className="w-16 text-right text-sm font-semibold tabular-nums text-foreground">
-                {pct(prob)}
+                {statusLabel}
               </span>
             </div>
           );
@@ -568,7 +573,9 @@ function Metric({
           {displayValue.toFixed(2)}
         </span>
         <div className="pb-2">
-          <p className="text-sm font-semibold text-foreground">{tier}</p>
+          <p className="text-sm font-semibold" style={{ color: tierColor[normalizedTier] ?? resolvedValueColor }}>
+            {tier}
+          </p>
           <p className="text-xs text-muted-foreground">
             #{rank} out of {total}
           </p>
@@ -578,6 +585,58 @@ function Metric({
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
         {description}
       </p>
+
+      {/* Slider: visual position within known range for PDI and RDS */}
+      <div className="mt-4">
+        {(() => {
+          const numericValue = parseFloat(value) || 0;
+          let min = 0;
+          let max = 1;
+          if (abbr === "PDI") {
+            // observed tournament PDI bounds
+            min = 1764;
+            max = 2077;
+          } else if (abbr === "RDS") {
+            // observed tournament RDS bounds
+            min = 0.8;
+            max = 1.3;
+          }
+
+          const range = Math.max(max - min, 1e-6);
+          let pctFilled = ((numericValue - min) / range) * 100;
+          if (!Number.isFinite(pctFilled)) pctFilled = 0;
+          pctFilled = Math.max(0, Math.min(100, pctFilled));
+
+          const trackColor = "var(--muted)";
+          const fillColor = resolvedValueColor;
+
+          return (
+            <div>
+              <div className="relative h-3 w-full rounded-full" style={{ background: trackColor }}>
+                <div
+                  className="absolute left-0 top-0 h-3 rounded-full"
+                  style={{ width: `${pctFilled}%`, background: fillColor }}
+                />
+                <div
+                  className="absolute top-1/2 h-5 w-5 rounded-full ring-2"
+                  style={{ left: `${pctFilled}%`, transform: 'translate(-50%, -50%)', background: fillColor, boxShadow: '0 0 0 3px rgba(0,0,0,0.12)' }}
+                />
+              </div>
+
+              <div className="mt-2 relative h-5 text-xs">
+                <span className="absolute left-0 text-muted-foreground">{min}</span>
+                <span className="absolute right-0 text-muted-foreground">{max}</span>
+                <span
+                  className="absolute text-foreground font-medium"
+                  style={{ left: `${pctFilled}%`, transform: 'translateX(-50%)' }}
+                >
+                  {abbr === "PDI" ? Number(numericValue).toFixed(0) : numericValue.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
     </div>
   );
 }
