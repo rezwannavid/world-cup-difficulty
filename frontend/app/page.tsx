@@ -11,6 +11,25 @@ export default function Home() {
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const loadingMessages = [
+    "Analyzing...",
+    "Simulating...",
+    "Compiling...",
+    "Indexing...",
+  ];
+  const [loadingStep, setLoadingStep] = useState(0);
+  useEffect(() => {
+    if (!loading) {
+      setLoadingStep(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => (prev + 1) % loadingMessages.length);
+    }, 1900);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const router = useRouter();
 
@@ -166,7 +185,7 @@ export default function Home() {
                   d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                 />
               </svg>
-              Analyzing...
+              {loadingMessages[loadingStep]}
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">

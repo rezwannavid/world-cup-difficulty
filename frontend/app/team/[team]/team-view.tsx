@@ -169,23 +169,62 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             <ArrowLeft />
             Change Team
           </button>
-          <button
-            onClick={() => setView("index")}
-            className="btn-animate inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-          >
-            See Difficulty Index
-            <ArrowRight />
-          </button>
         </div>
 
         {/* Eliminated message */}
         <div className="mt-20">
-          <h2 className="text-[2rem] font-medium leading-[1.2] tracking-tight text-muted-foreground">
-            Your team was knocked out
-            <br />
-            of the tournament.
+          <h2 className="text-[1.8rem] font-medium leading-[1.15] tracking-tight text-muted-foreground">
+            Your team was knocked out by{" "}
+            <span className="text-primary">
+              {data.defeated_by ?? "their opponent"}
+            </span>
+            .
           </h2>
         </div>
+
+        {/* Actual tournament path */}
+        {data.elimination_history?.length ? (
+          <div className="mt-10 space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Path Taken
+            </p>
+
+            {data.elimination_history.map((match) => (
+              <div
+                key={`${match.round}-${match.match_index}`}
+                className="flex items-center gap-3 rounded-md border border-border px-4 py-3"
+              >
+                {getFlagUrl(match.opponent) && (
+                  <Image
+                    src={getFlagUrl(match.opponent)!}
+                    alt={`${match.opponent} flag`}
+                    width={28}
+                    height={20}
+                    className="h-5 w-7 rounded-sm object-cover shadow-sm"
+                  />
+                )}
+
+                <div className="flex flex-1 items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {match.opponent}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {prettyRound(match.round)}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => router.push(`/team/${encodeURIComponent(match.opponent)}`)}
+                    className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
+                  >
+                    Follow Path
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </main>
     );
   }
