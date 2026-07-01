@@ -32,7 +32,8 @@ export default async function RankingsPage({
   const data = res.data;
   const visibleData = data.map((team) => ({
     ...team,
-    eliminated: team.eliminated ?? team.win_probability === 0,
+    eliminated:
+      team.eliminated ?? Number(team.win_probability) <= 0,
   }));
   const total = visibleData.length;
 
@@ -100,8 +101,12 @@ export default async function RankingsPage({
         <div className="flex items-center gap-3 bg-secondary px-4 py-2.5 text-xs font-medium text-muted-foreground">
           <span className="w-7">#</span>
           <span className="flex-1 pl-12">Team</span>
-          <span className="w-14 text-right">PDI</span>
-          <span className="w-16 text-right">RDS</span>
+          {metric === "psi" ? (
+            <span className="w-14 text-right">PDI</span>
+          ) : null}
+          {metric === "rds" ? (
+            <span className="w-16 text-right">RDS</span>
+          ) : null}
         </div>
 
         {visibleData.map((team, index) => {
@@ -112,12 +117,10 @@ export default async function RankingsPage({
           const tier = tierFromRank(rank, total);
           const isPsiSelected = metric === "psi";
           const selectedDelta = isPsiSelected ? team.delta_PSI : team.delta_RDS;
-          const deltaSign = selectedDelta != null ? (selectedDelta >= 0 ? "+" : "-") : "";
+          const deltaValue = selectedDelta;
           const deltaClass = team.eliminated
             ? "text-white/50"
-            : selectedDelta != null && selectedDelta >= 0
-            ? "text-emerald-400"
-            : "text-orange-400";
+            : "text-white";
 
           return (
             <Link
@@ -151,18 +154,32 @@ export default async function RankingsPage({
                   </span>
                 </span>
               </div>
-              <span className={`w-14 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
-                {team.PSI.toFixed(0)}
-                {isPsiSelected && selectedDelta != null ? (
-                  <span className={`ml-2 ${deltaClass}`}>{deltaSign}</span>
-                ) : null}
-              </span>
-              <span className={`w-16 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
-                {team.RDS.toFixed(1)}
-                {!isPsiSelected && selectedDelta != null ? (
-                  <span className={`ml-2 ${deltaClass}`}>{deltaSign}</span>
-                ) : null}
-              </span>
+              {metric === "psi" ? (
+                <span className={`w-14 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
+                  {team.PSI.toFixed(0)}
+                  {selectedDelta != null ? (
+                    <span className={`ml-2 ${deltaClass} inline-flex items-baseline`}>
+                      <span>{selectedDelta >= 0 ? "↑" : "↓"}</span>
+                      <span className="ml-0.5 text-[10px] leading-none">
+                        {Math.abs(Number(selectedDelta)).toFixed(2)}
+                      </span>
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+              {metric === "rds" ? (
+                <span className={`w-16 text-right text-sm tabular-nums ${team.eliminated ? "text-white/50" : "text-foreground"}`}>
+                  {team.RDS.toFixed(1)}
+                  {selectedDelta != null ? (
+                    <span className={`ml-2 ${deltaClass} inline-flex items-baseline`}>
+                      <span>{selectedDelta >= 0 ? "↑" : "↓"}</span>
+                      <span className="ml-0.5 text-[10px] leading-none">
+                        {Math.abs(Number(selectedDelta)).toFixed(2)}
+                      </span>
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
             </Link>
           );
         })}

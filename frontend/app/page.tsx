@@ -47,9 +47,9 @@ export default function Home() {
 }, []);
 
   return (
-    <main className="page-transition mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 pb-16 pt-12">
+    <main className="page-transition mx-auto flex min-h-screen w-full max-w-md flex-col justify-start px-5 pb-16 pt-6">
       {/* Header artwork slot */}
-      <div className="mb-8 w-full overflow-hidden rounded-lg">
+      <div className="-mt-4 mb-6 w-full overflow-hidden rounded-lg">
         <Image
           src="/header-artwork.png"
           alt="FIFA World Cup 2026 Path Difficulty Analyzer Header"
@@ -116,7 +116,7 @@ export default function Home() {
                     setSelectedTeam(team);
                     setDropdownOpen(false);
                   }}
-                  className="flex w-full items-center gap-3 px-5 py-3 text-left text-sm text-secondary-foreground hover:bg-secondary"
+                  className="flex w-full items-center gap-3 px-5 py-3 text-left text-sm text-secondary-foreground transition-colors duration-300 hover:bg-secondary active:bg-primary active:text-primary-foreground"
                 >
                   {getFlagUrl(team) && (
                     <Image
