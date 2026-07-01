@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Skull, BadgeCheck } from "lucide-react";
+import { Skull, BadgeCheck, Eye, EyeOff } from "lucide-react";
 import {
   difficultyColor,
   formatPoints,
@@ -97,6 +97,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const router = useRouter();
   const [view, setView] = useState<"path" | "index">("path");
   const [showDelta, setShowDelta] = useState(false);
+  const [hideEliminated, setHideEliminated] = useState(false);
   const [loadingTeam, setLoadingTeam] = useState<string | null>(null);
   const loadingMessages = ["Analyzing...", "Simulating...", "Compiling..."];
   const [loadingStep, setLoadingStep] = useState(0);
@@ -189,8 +190,9 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             className="btn-animate inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground"
           >
             <ArrowLeft />
-            Change Team
+            Back
           </button>
+
         </div>
 
         {/* Eliminated message */}
@@ -302,7 +304,7 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
               className="btn-animate inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-5 py-2.5 text-sm font-semibold text-secondary-foreground"
             >
               <ArrowLeft />
-              Change Team
+              Back
             </button>
             <button
               onClick={() => setView("index")}
@@ -339,6 +341,8 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             sortedOpponents={sortedOpponents}
             ratingOf={ratingOf}
             defeatedTeams={data.defeated_teams}
+            hideEliminated={hideEliminated}
+            setHideEliminated={setHideEliminated}
           />
         ) : (
           <IndexView
@@ -354,6 +358,8 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
             defeatedTeams={data.defeated_teams}
             showDelta={showDelta}
             setShowDelta={setShowDelta}
+            hideEliminated={hideEliminated}
+            setHideEliminated={setHideEliminated}
           />
         )}
       </div>
@@ -376,11 +382,15 @@ function PathView({
   sortedOpponents,
   ratingOf,
   defeatedTeams,
+  hideEliminated,
+  setHideEliminated,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
   ratingOf: (name: string) => number | undefined;
   defeatedTeams?: string[];
+  hideEliminated: boolean;
+  setHideEliminated: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const getStatusLabel = (_round: string, opponentName: string, prob: number) => {
     const wasDefeated =
@@ -419,27 +429,42 @@ function PathView({
         const [topName, topProb] = defeatedEntry ?? entries[0];
         const rest = entries.filter(([name]) => name !== topName);
         const topRating = ratingOf(topName);
+        const cardColor =
+          topRating != null
+            ? difficultyColor(topRating)
+            : "var(--secondary)";
 
         return (
           <section key={round}>
             {/* Round header */}
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {prettyRound(round)}
-            </p>
+            <div className="mb-3 flex items-end justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {prettyRound(round)}
+              </p>
+
+              {round === "Round of 32" && (
+                <button
+                  onClick={() => setHideEliminated((prev) => !prev)}
+                  className={`btn-animate inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+                    hideEliminated
+                      ? "border border-primary bg-primary text-primary-foreground"
+                      : "border border-border bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {hideEliminated ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <span>{hideEliminated ? "Show eliminated teams" : "Hide eliminated teams"}</span>
+                </button>
+              )}
+            </div>
 
             {/* Highlighted most-likely opponent */}
             <div
               className="rounded-md px-4 py-3"
               style={{
-                backgroundColor:
-                  topRating != null
-                    ? difficultyColor(topRating)
-                    : "var(--secondary)",
+                backgroundColor: cardColor,
                 boxShadow:
                   topProb >= 1
-                    ? `inset 0 0 0 4px color-mix(in srgb, ${
-                        topRating != null ? difficultyColor(topRating) : "var(--secondary)"
-                      } 65%, black)`
+                    ? `inset 0 0 0 4px color-mix(in srgb, ${cardColor} 65%, black)`
                     : undefined,
               }}
             >
@@ -474,10 +499,22 @@ function PathView({
                     </span>
                   )}
                   {getStatusLabel(round, topName, topProb) === "Defeated" && (
-                    <Skull className="h-9 w-9 fill-current stroke-black/25 text-foreground shrink-0" />
+                    <Skull
+                      className="h-9 w-9 fill-current text-foreground shrink-0"
+                      style={{
+                        stroke: `color-mix(in srgb, ${cardColor} 50%, white)`,
+                        fill: `color-mix(in srgb, ${cardColor} 50%, red)`
+                      }}
+                    />
                   )}
                   {getStatusLabel(round, topName, topProb) === "Confirmed" && (
-                    <BadgeCheck className="h-9 w-9 fill-current stroke-black/25 text-foreground shrink-0" />
+                    <BadgeCheck
+                      className="h-9 w-9 fill-current text-foreground shrink-0"
+                      style={{
+                        stroke: `color-mix(in srgb, ${cardColor} 50%, white)`,
+                        fill: `color-mix(in srgb, ${cardColor} 50%, green)`
+                      }}
+                    />
                   )}
                 </div>
               </div>
@@ -485,6 +522,7 @@ function PathView({
 
             {/* Other possible opponents */}
             {rest.map(([name, prob]) => {
+              if (hideEliminated && prob <= 0) return null;
               const rating = ratingOf(name);
               return (
                 <div
@@ -542,6 +580,8 @@ function IndexView({
   defeatedTeams,
   showDelta,
   setShowDelta,
+  hideEliminated,
+  setHideEliminated,
 }: {
   rounds: string[];
   sortedOpponents: (round: string) => [string, number][];
@@ -555,23 +595,31 @@ function IndexView({
   defeatedTeams?: string[];
   showDelta: boolean;
   setShowDelta: (value: boolean) => void;
+  hideEliminated: boolean;
+  setHideEliminated: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   return (
     <div className="mt-9">
       {/* Compact path summary */}
-      <div className="overflow-hidden rounded-md">
+      <div className="overflow-hidden rounded-md border border-border">
         {rounds.map((round) => {
           const entries = sortedOpponents(round);
-          if (entries.length === 0) return null;
-          const defeatedEntry = entries.find(
+          const visibleEntries = hideEliminated
+            ? entries.filter(([, prob]) => prob > 0)
+            : entries;
+
+          if (visibleEntries.length === 0) return null;
+          const defeatedEntry = visibleEntries.find(
             ([name]) =>
               defeatedTeams?.some(
                 (t) => t.trim().toLowerCase() === name.trim().toLowerCase()
               ) ?? false
           );
 
-          const [name, prob] = defeatedEntry ?? entries[0];
+          const [name, prob] = defeatedEntry ?? visibleEntries[0];
           const rating = ratingOf(name);
+          const cardColor =
+            rating != null ? difficultyColor(rating) : "var(--secondary)";
           const isDefeated =
             defeatedTeams?.some(
               (t) => t.trim().toLowerCase() === name.trim().toLowerCase()
@@ -589,8 +637,11 @@ function IndexView({
               key={round}
               className="flex items-center gap-3 px-4 py-3"
               style={{
-                backgroundColor:
-                  rating != null ? difficultyColor(rating) : "var(--secondary)",
+                backgroundColor: cardColor,
+                borderBottom:
+                  round !== rounds[rounds.length - 1]
+                    ? "1px solid var(--border)"
+                    : undefined,
               }}
             >
               <div className="flex flex-1 items-center gap-3">
@@ -603,9 +654,31 @@ function IndexView({
                     className="h-6 w-9 rounded-sm object-cover shadow-sm"
                   />
                 )}
-                <span className={`text-lg font-bold ${isDefeated || prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
-                  {name}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-lg font-bold ${isDefeated || prob <= 0 ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                    {name}
+                  </span>
+
+                  {isDefeated && (
+                    <Skull
+                      className="h-6 w-6 fill-current text-foreground shrink-0"
+                      style={{
+                        stroke: `color-mix(in srgb, ${cardColor} 40%, white)`,
+                        fill: `color-mix(in srgb, ${cardColor} 50%, red)`
+                      }}
+                    />
+                  )}
+
+                  {!isDefeated && prob >= 0.9999 && (
+                    <BadgeCheck
+                      className="h-6 w-6 fill-current text-foreground shrink-0"
+                      style={{
+                        stroke: `color-mix(in srgb, ${cardColor} 40%, white)`,
+                        fill: `color-mix(in srgb, ${cardColor} 50%, green)`
+                      }}
+                    />
+                  )}
+                </div>
               </div>
               {rating != null && rating > 0 && (
                 <span
@@ -798,7 +871,7 @@ function Metric({
             className="text-5xl font-light tracking-tight tabular-nums"
             style={{ color: resolvedValueColor }}
           >
-            {abbr === "RDS" ? displayValue.toFixed(3) : displayValue.toFixed(2)}
+            {abbr === "RDS" ? displayValue.toFixed(2) : displayValue.toFixed(2)}
           </span>
           <div
             className="mt-1 text-sm font-semibold"
@@ -811,7 +884,7 @@ function Metric({
                 {delta > 0 ? "↑" : delta < 0 ? "↓" : "="}
               </span>
               <span>
-                {Math.abs(delta).toFixed(abbr === "RDS" ? 3 : 2)}
+                {Math.abs(delta).toFixed(abbr === "RDS" ? 2 : 2)}
               </span>
             </span>
           </div>
@@ -868,16 +941,16 @@ function Metric({
               min = -15;
               max = 46;
             } else if (abbr === "RDS") {
-              min = -0.01;
-              max = 0.01;
+              min = -1;
+              max = 3;
             }
           } else {
             if (abbr === "PDI") {
               min = 1764;
               max = 2077;
             } else if (abbr === "RDS") {
-              min = 0.8;
-              max = 1.3;
+              min = 50;
+              max = 150;
             }
           }
 
@@ -890,6 +963,9 @@ function Metric({
           if (showDelta) {
             const safeMax = Math.max(absMax, 1e-6);
             finalPct = 50 + (numericValue / safeMax) * 50;
+          } else if (abbr === "RDS") {
+            const safeRange = 50;
+            finalPct = 50 + ((numericValue - 100) / safeRange) * 50;
           } else {
             finalPct = ((numericValue - min) / range) * 100;
           }
@@ -970,10 +1046,10 @@ function Metric({
 
               <div className="mt-2 relative h-5 text-xs">
                 <span className="absolute left-0 text-muted-foreground">
-                  {abbr === "RDS" && showDelta ? min.toFixed(3) : min}
+                  {abbr === "RDS" && showDelta ? min.toFixed(2) : min}
                 </span>
                 <span className="absolute right-0 text-muted-foreground">
-                  {abbr === "RDS" && showDelta ? max.toFixed(3) : max}
+                  {abbr === "RDS" && showDelta ? max.toFixed(2) : max}
                 </span>
 
                 <span
@@ -987,7 +1063,7 @@ function Metric({
                 >
                   {abbr === "PDI"
                     ? Number(labelValue).toFixed(showDelta ? 2 : 0)
-                    : Number(labelValue).toFixed(abbr === "RDS" ? 3 : 2)}
+                    : Number(labelValue).toFixed(abbr === "RDS" ? 2 : 2)}
                 </span>
               </div>
             </div>

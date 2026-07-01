@@ -329,7 +329,7 @@ def run_simulation():
 
     RDS = {
         team: (
-            PSI[team] / teams[team]["rank"]
+            (PSI[team] / teams[team]["rank"]) * 100
             if teams[team]["rank"] > 0 else 0
         )
         for team in teams
