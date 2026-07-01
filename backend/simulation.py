@@ -1,6 +1,7 @@
 import copy
 import math
 import random
+import time
 import pandas as pd
 from collections import defaultdict
 
@@ -475,6 +476,7 @@ def get_opponent_probabilities(team_name):
 
     return results
 
+
 # ==============================
 # PUBLIC EXPORTS (KEEP SAME)
 # ==============================
@@ -485,6 +487,18 @@ RDS = {}
 baseline_win_probabilities = {}
 baseline_PSI = {}
 baseline_RDS = {}
+LAST_REFRESH = 0
+REFRESH_INTERVAL = 300
+
+
+def maybe_refresh():
+    global LAST_REFRESH
+
+    now = time.time()
+
+    if now - LAST_REFRESH >= REFRESH_INTERVAL:
+        initialize_simulation()
+        LAST_REFRESH = now
 
 
 def get_team_data(team_name):
@@ -522,6 +536,7 @@ def get_team_data(team_name):
 
 
 def run_model(team_name):
+    maybe_refresh()
     return get_team_data(team_name)
 
 
