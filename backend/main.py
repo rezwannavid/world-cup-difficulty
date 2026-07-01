@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from simulation import (
     run_model,
+    initialize_simulation,
     teams,
     PSI,
     RDS,
@@ -37,9 +38,10 @@ def ensure_simulation_initialized():
         return
 
     if not PSI or len(PSI) < len(teams):
-        run_model(next(iter(teams)))
+        initialize_simulation()
 
 
+@lru_cache(maxsize=64)
 def cached_team(team_name: str):
     ensure_simulation_initialized()
     return run_model(team_name)
@@ -71,9 +73,12 @@ def cached_rankings(sort: str = "psi", order: str = "desc"):
     else:
         data.sort(key=lambda x: x["PSI"], reverse=reverse)
 
-    print("TOP 3:", [(x["team"], x["PSI"], x["RDS"]) for x in data[:3]])
 
     return data
+
+@app.on_event("startup")
+def startup_event():
+    ensure_simulation_initialized()
 
 @app.get("/")
 def root():
@@ -94,9 +99,6 @@ def get_teams():
 @app.get("/team/{team_name}")
 def get_team(team_name: str):
     result = cached_team(team_name)
-    print("TEAM:", team_name)
-    print("DEFEATED TEAMS:", result.get("defeated_teams"))
-    print("DEFEATED BY:", result.get("defeated_by"))
     defeated_by = result.get("defeated_by")
     defeated_teams = result.get("defeated_teams", [])
     elimination_history = result.get("elimination_history", [])
@@ -143,7 +145,5 @@ def rankings(sort: str = "psi", order: str = "desc"):
         sort = "psi"
     if order not in ["asc", "desc"]:
         order = "desc"
-
-    print("SORT:", sort, "ORDER:", order)
 
     return cached_rankings(sort, order)

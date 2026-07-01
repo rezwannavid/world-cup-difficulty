@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -95,40 +95,60 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const router = useRouter();
   const [view, setView] = useState<"path" | "index">("path");
   const [showDelta, setShowDelta] = useState(false);
+  const [loadingTeam, setLoadingTeam] = useState<string | null>(null);
+  const loadingMessages = ["Analyzing...", "Simulating...", "Compiling..."];
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  useEffect(() => {
+    if (!loadingTeam) {
+      setLoadingStep(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => (prev + 1) % loadingMessages.length);
+    }, 1800);
+
+    return () => clearInterval(interval);
+  }, [loadingTeam]);
 
   const ratingOf = (name: string) => data.ratings?.[name];
-  console.log("TEAM:", data.team);
-  console.log("DEFEATED TEAMS:", data.defeated_teams);
-  console.log("OPPONENTS:", data.opponents);
 
-  function sortedOpponents(round: string) {
-    // Remove the current team itself from opponent lists.
-    // Completed matches now include both winner (1.0) and loser (0.0),
-    // but the UI should never render the team as its own opponent.
-    const teams = Object.fromEntries(
-      Object.entries(data.opponents[round] ?? {}).filter(
-        ([name]) => name !== data.team
-      )
-    );
+  const sortedOpponentsMap = useMemo(() => {
+    const result: Record<string, [string, number][]> = {};
 
-    return Object.entries(teams).sort((a, b) => {
-      const aDefeated = data.defeated_teams?.includes(a[0]) ?? false;
-      const bDefeated = data.defeated_teams?.includes(b[0]) ?? false;
+    for (const round of Object.keys(data.opponents ?? {})) {
+      const teams = Object.fromEntries(
+        Object.entries(data.opponents[round] ?? {}).filter(
+          ([name]) => name !== data.team
+        )
+      );
 
-      // Defeated teams always come first
-      if (aDefeated !== bDefeated) {
-        return aDefeated ? -1 : 1;
-      }
+      result[round] = Object.entries(teams).sort((a, b) => {
+        const aDefeated = data.defeated_teams?.includes(a[0]) ?? false;
+        const bDefeated = data.defeated_teams?.includes(b[0]) ?? false;
 
-      // Otherwise sort by probability descending
-      return b[1] - a[1];
-    });
-  }
+        if (aDefeated !== bDefeated) {
+          return aDefeated ? -1 : 1;
+        }
 
-  const rounds = ROUND_ORDER.filter((r) => {
-    const entries = data.opponents[r];
-    return entries && Object.keys(entries).length > 0;
-  });
+        return b[1] - a[1];
+      });
+    }
+
+    return result;
+  }, [data.opponents, data.team, data.defeated_teams]);
+
+  const sortedOpponents = (round: string) => sortedOpponentsMap[round] ?? [];
+
+  const rounds = useMemo(
+    () =>
+      ROUND_ORDER.filter((r) => {
+        const entries = data.opponents[r];
+        return entries && Object.keys(entries).length > 0;
+      }),
+    [data.opponents]
+  );
 
   const pdiTier = tierFromRank(pdiRank, total);
   const rdsTier = tierFromRank(rdsRank, total);
@@ -215,10 +235,23 @@ export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
                   </div>
 
                   <button
-                    onClick={() => router.push(`/team/${encodeURIComponent(match.opponent)}`)}
-                    className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
+                    onClick={() => {
+                      setLoadingTeam(match.opponent);
+                      router.push(`/team/${encodeURIComponent(match.opponent)}`);
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition min-w-[170px]"
                   >
-                    Follow Path
+                    {loadingTeam === match.opponent ? (
+                      <>
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                        {loadingMessages[loadingStep]}
+                      </>
+                    ) : (
+                      <>
+                        Follow Path
+                        <ArrowRight />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -352,10 +385,6 @@ function PathView({
       defeatedTeams?.some(
         (t) => t.trim().toLowerCase() === opponentName.trim().toLowerCase()
       ) ?? false;
-    console.log("Checking:", opponentName, {
-      defeated: wasDefeated,
-      prob,
-    });
     if (wasDefeated) return "Defeated";
     if (prob <= 0) return "Eliminated";
     if (prob >= 0.9999) return "Confirmed";
@@ -384,11 +413,6 @@ function PathView({
               (t) => t.trim().toLowerCase() === name.trim().toLowerCase()
             ) ?? false
         );
-        console.log("Top selection:", {
-          round,
-          entries,
-          defeatedEntry,
-        });
 
         const [topName, topProb] = defeatedEntry ?? entries[0];
         const rest = entries.filter(([name]) => name !== topName);
@@ -433,8 +457,11 @@ function PathView({
                   </span>
                 </div>
                 {topRating != null && topRating > 0 && (
-                  <span className="text-sm font-medium tabular-nums text-foreground/80">
-                    {formatPoints(topRating)}
+                  <span
+                    title="Elo is a strength rating system that estimates how strong a team is based on match results and opponent difficulty. Higher Elo means a stronger team."
+                    className="cursor-help text-sm font-medium tabular-nums text-foreground/80"
+                  >
+                    {topRating} Elo
                   </span>
                 )}
               </div>
@@ -467,8 +494,11 @@ function PathView({
                     </span>
                   </div>
                   {rating != null && rating > 0 && (
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                      {formatPoints(rating)}
+                    <span
+                      title="Elo is a strength rating system that estimates how strong a team is based on match results and opponent difficulty. Higher Elo means a stronger team."
+                      className="cursor-help text-xs tabular-nums text-muted-foreground"
+                    >
+                      {rating} Elo
                     </span>
                   )}
                   <span className="w-28 text-right text-xs font-medium tabular-nums text-foreground">
@@ -565,8 +595,11 @@ function IndexView({
                 </span>
               </div>
               {rating != null && rating > 0 && (
-                <span className="text-sm font-medium tabular-nums text-foreground/80">
-                  {formatPoints(rating)}
+                <span
+                  title="Elo is a strength rating system that estimates how strong a team is based on match results and opponent difficulty. Higher Elo means a stronger team."
+                  className="cursor-help text-sm font-medium tabular-nums text-foreground/80"
+                >
+                  {rating} Elo
                 </span>
               )}
               <span className="w-16 text-right text-sm font-semibold tabular-nums text-foreground">

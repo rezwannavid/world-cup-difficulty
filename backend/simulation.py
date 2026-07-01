@@ -10,7 +10,7 @@ from collections import defaultdict
 
 SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRsuUJbrypZjesZoDAgMA9YXcF1E2a5ycV1g-oyHvpVJ836HCCii9p_3zQy_aKpMPLDv9O3HyETwpZ/pub?output=csv"
 BRACKET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQxzdNeU3X9j6BudcKXXiFHk6Enojzq0TtPE9YmzHqfPjdk3wFLfjGdtp7G_gMd80xG4B00v9uH90_5/pub?output=csv"
-SIMULATION_COUNT = 100000
+SIMULATION_COUNT = 10000
 
 
 # ==============================
@@ -522,7 +522,6 @@ def get_team_data(team_name):
 
 
 def run_model(team_name):
-    initialize_simulation()
     return get_team_data(team_name)
 
 

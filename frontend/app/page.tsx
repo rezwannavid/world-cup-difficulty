@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { getFlagUrl } from "./lib/flags";
 
@@ -34,36 +33,33 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-  const fetchTeams = async (retries = 3) => {
-    try {
-      console.log("Fetching from:", process.env.NEXT_PUBLIC_API_URL);
+    const fetchTeams = async () => {
+      try {
+        setLoading(true);
 
-      setLoading(true);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/teams`,
+          {
+            next: { revalidate: 300 },
+          }
+        );
 
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/teams`,
-        {
-          timeout: 10000, // wait max 10 seconds
+        if (!res.ok) {
+          throw new Error("Failed to fetch teams");
         }
-      );
 
-      setTeams(res.data);
-      setLoading(false);
-    } catch (err) {
-      console.error("Teams fetch failed:", err);
-
-      if (retries > 0) {
-        console.log(`Retrying... (${retries} left)`);
-        setTimeout(() => fetchTeams(retries - 1), 2000);
-      } else {
+        const data = await res.json();
+        setTeams(data);
+      } catch (err) {
+        console.error("Teams fetch failed:", err);
         setTeams([]);
+      } finally {
         setLoading(false);
       }
-    }
-  };
+    };
 
-  fetchTeams();
-}, []);
+    fetchTeams();
+  }, []);
 
   return (
     <main className="page-transition mx-auto flex min-h-screen w-full max-w-md flex-col justify-start px-5 pb-16 pt-6">
@@ -158,9 +154,8 @@ export default function Home() {
           className="btn-animate w-full rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
           onClick={() => {
             if (selectedTeam === "") return;
-
             setLoading(true);
-
+            router.prefetch(`/team/${encodeURIComponent(selectedTeam)}`);
             router.push(`/team/${encodeURIComponent(selectedTeam)}`);
           }}
         >
@@ -211,14 +206,20 @@ export default function Home() {
 
         <button
           className="btn-animate w-full rounded-full border border-border bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
-          onClick={() => router.push("/rankings")}
+          onClick={() => {
+            router.prefetch("/rankings");
+            router.push("/rankings");
+          }}
         >
           View Full Rankings
         </button>
 
         <button
           className="w-full px-5 py-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-          onClick={() => router.push("/methodology")}
+          onClick={() => {
+            router.prefetch("/methodology");
+            router.push("/methodology");
+          }}
         >
           How it works — Read the Methodology
         </button>
