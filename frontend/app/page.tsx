@@ -66,7 +66,7 @@ export default function Home() {
       {/* Header artwork slot */}
       <div className="-mt-3 mb-6 w-full overflow-hidden rounded-lg">
         <Image
-          src="/header.gif"
+          src="/Header.gif"
           alt="FIFA World Cup 2026 Path Difficulty Analyzer Header"
           width={1200}
           height={400}
