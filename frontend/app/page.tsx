@@ -64,12 +64,12 @@ export default function Home() {
   return (
     <main className="page-transition mx-auto flex min-h-screen w-full max-w-md flex-col justify-start px-5 pb-16 pt-6">
       {/* Header artwork slot */}
-      <div className="-mt-4 mb-6 w-full overflow-hidden rounded-lg">
+      <div className="-mt-3 mb-6 w-full overflow-hidden rounded-lg">
         <Image
-          src="/header-artwork.png"
+          src="/header.gif"
           alt="FIFA World Cup 2026 Path Difficulty Analyzer Header"
           width={1200}
-          height={420}
+          height={400}
           className="h-auto w-full object-cover"
           priority
         />
