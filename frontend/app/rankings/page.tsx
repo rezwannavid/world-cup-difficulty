@@ -20,21 +20,24 @@ type Ranking = {
 export default async function RankingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; order?: string }>;
+  searchParams: Promise<{ sort?: string; order?: string; hideEliminated?: string }>;
 }) {
-  const { sort, order } = await searchParams;
+  const { sort, order, hideEliminated } = await searchParams;
   const metric = sort === "rds" ? "rds" : "psi";
   const direction = order === "asc" ? "asc" : "desc";
+  const hideOut = hideEliminated === "true";
 
   const res = await axios.get<Ranking[]>(
     `${process.env.NEXT_PUBLIC_API_URL}/rankings?sort=${metric}&order=${direction}`
   );
   const data = res.data;
-  const visibleData = data.map((team) => ({
-    ...team,
-    eliminated:
-      team.eliminated ?? Number(team.win_probability) <= 0,
-  }));
+  const visibleData = data
+    .map((team) => ({
+      ...team,
+      eliminated:
+        team.eliminated ?? Number(team.win_probability) <= 0,
+    }))
+    .filter((team) => (hideOut ? !team.eliminated : true));
   const total = visibleData.length;
 
   return (
@@ -52,15 +55,25 @@ export default async function RankingsPage({
       {/* Single-row action bar: Back + sort controls scale uniformly */}
       <div className="mt-6 flex items-center gap-3">
         <Link
-          href="/"
+          href={`/?hideEliminated=${hideOut}`}
           className="btn-animate flex shrink-0 items-center justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
         >
           Home
         </Link>
+        <Link
+          href={`/rankings?sort=${metric}&order=${direction}&hideEliminated=${hideOut ? "false" : "true"}`}
+          className={`btn-animate flex shrink-0 items-center justify-center rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+            hideOut
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-secondary text-secondary-foreground"
+          }`}
+        >
+          {hideOut ? "Show All" : "Hide Eliminated"}
+        </Link>
 
         <div className="flex flex-1 rounded-full border border-border bg-secondary p-1">
           <Link
-            href={`/rankings?sort=psi&order=${metric === "psi" && direction === "desc" ? "asc" : "desc"}`}
+            href={`/rankings?sort=psi&order=${metric === "psi" && direction === "desc" ? "asc" : "desc"}&hideEliminated=${hideOut}`}
             className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold transition ${
               metric === "psi"
                 ? "btn-animate bg-primary text-primary-foreground"
@@ -70,7 +83,7 @@ export default async function RankingsPage({
             PDI {metric === "psi" ? (direction === "desc" ? "↓" : "↑") : ""}
           </Link>
           <Link
-            href={`/rankings?sort=rds&order=${metric === "rds" && direction === "desc" ? "asc" : "desc"}`}
+            href={`/rankings?sort=rds&order=${metric === "rds" && direction === "desc" ? "asc" : "desc"}&hideEliminated=${hideOut}`}
             className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold transition ${
               metric === "rds"
                 ? "btn-animate bg-primary text-primary-foreground"

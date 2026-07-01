@@ -661,7 +661,7 @@ function IndexView({
           <Metric
             abbr="RDS"
             name="Relative Difficulty Score"
-            value={showDelta ? data.delta_RDS.toFixed(3) : data.RDS.toFixed(3)}
+            value={data.RDS.toFixed(3)}
             delta={data.delta_RDS}
             showDelta={showDelta}
             valueColor={tierColor[rdsTier]}
