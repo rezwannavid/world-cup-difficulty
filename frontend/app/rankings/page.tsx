@@ -1,6 +1,7 @@
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
+import { Home, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { tierBg, tierFromRank } from "../lib/difficulty";
 
 import { getFlagUrl } from "../lib/flags";
@@ -20,9 +21,9 @@ type Ranking = {
 export default async function RankingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; order?: string; hideEliminated?: string }>;
+  searchParams: Promise<{ sort?: string; order?: string; hideEliminated?: string; team?: string }>;
 }) {
-  const { sort, order, hideEliminated } = await searchParams;
+  const { sort, order, hideEliminated, team } = await searchParams;
   const metric = sort === "rds" ? "rds" : "psi";
   const direction = order === "asc" ? "asc" : "desc";
   const hideOut = hideEliminated === "true";
@@ -52,47 +53,32 @@ export default async function RankingsPage({
         hardest possible path; the last rank is the easiest.
       </p>
 
-      {/* Single-row action bar: Back + sort controls scale uniformly */}
-      <div className="mt-6 flex items-center gap-3">
+      {/* Navigation buttons */}
+      <div className="mt-6 flex items-center gap-2">
+        <Link
+          href={team ? `/team/${encodeURIComponent(team)}?hideEliminated=${hideOut}` : "/"}
+          className="btn-animate flex shrink-0 items-center gap-2 justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Link>
         <Link
           href={`/?hideEliminated=${hideOut}`}
-          className="btn-animate flex shrink-0 items-center justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
+          className="btn-animate flex shrink-0 items-center gap-2 justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
         >
+          <Home className="h-4 w-4" />
           Home
         </Link>
-        <Link
-          href={`/rankings?sort=${metric}&order=${direction}&hideEliminated=${hideOut ? "false" : "true"}`}
-          className={`btn-animate flex shrink-0 items-center justify-center rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
-            hideOut
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-secondary text-secondary-foreground"
-          }`}
-        >
-          {hideOut ? "Show All" : "Hide Eliminated"}
-        </Link>
 
-        <div className="flex flex-1 rounded-full border border-border bg-secondary p-1">
+        {team ? (
           <Link
-            href={`/rankings?sort=psi&order=${metric === "psi" && direction === "desc" ? "asc" : "desc"}&hideEliminated=${hideOut}`}
-            className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold transition ${
-              metric === "psi"
-                ? "btn-animate bg-primary text-primary-foreground"
-                : "text-secondary-foreground"
-            }`}
+            href={`/team/${encodeURIComponent(team)}?hideEliminated=${hideOut}`}
+            className="btn-animate flex shrink-0 items-center gap-2 justify-center rounded-full border border-border bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
           >
-            PDI {metric === "psi" ? (direction === "desc" ? "↓" : "↑") : ""}
+            <span className="text-base">←</span>
+            Back to team analysis
           </Link>
-          <Link
-            href={`/rankings?sort=rds&order=${metric === "rds" && direction === "desc" ? "asc" : "desc"}&hideEliminated=${hideOut}`}
-            className={`flex-1 rounded-full px-4 py-2 text-center text-sm font-semibold transition ${
-              metric === "rds"
-                ? "btn-animate bg-primary text-primary-foreground"
-                : "text-secondary-foreground"
-            }`}
-          >
-            RDS {metric === "rds" ? (direction === "desc" ? "↓" : "↑") : ""}
-          </Link>
-        </div>
+        ) : null}
       </div>
 
       {/* What the metrics mean */}
@@ -107,6 +93,44 @@ export default async function RankingsPage({
           Difficulty Score) — how brutal a team&apos;s specific bracket layout is
           compared to other nations.
         </p>
+      </div>
+
+      {/* Ranking controls */}
+      <div className="mt-5 flex flex-wrap items-center gap-2">
+        <Link
+          href={`/rankings?sort=${metric}&order=${direction}&hideEliminated=${hideOut ? "false" : "true"}`}
+          className={`btn-animate flex shrink-0 items-center gap-1.5 justify-center rounded-full border px-3 py-2 text-xs font-semibold transition ${
+            hideOut
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-secondary text-secondary-foreground"
+          }`}
+        >
+          {hideOut ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          <span>{hideOut ? "Show eliminated teams" : "Hide eliminated teams"}</span>
+        </Link>
+
+        <div className="flex min-w-0 flex-1 rounded-full border border-border bg-secondary p-1">
+          <Link
+            href={`/rankings?sort=psi&order=${metric === "psi" && direction === "desc" ? "asc" : "desc"}&hideEliminated=${hideOut}`}
+            className={`flex-1 rounded-full px-3 py-2 text-center text-xs font-semibold transition ${
+              metric === "psi"
+                ? "btn-animate bg-primary text-primary-foreground"
+                : "text-secondary-foreground"
+            }`}
+          >
+            PDI {metric === "psi" ? (direction === "desc" ? "↓" : "↑") : ""}
+          </Link>
+          <Link
+            href={`/rankings?sort=rds&order=${metric === "rds" && direction === "desc" ? "asc" : "desc"}&hideEliminated=${hideOut}`}
+            className={`flex-1 rounded-full px-3 py-2 text-center text-xs font-semibold transition ${
+              metric === "rds"
+                ? "btn-animate bg-primary text-primary-foreground"
+                : "text-secondary-foreground"
+            }`}
+          >
+            RDS {metric === "rds" ? (direction === "desc" ? "↓" : "↑") : ""}
+          </Link>
+        </div>
       </div>
 
       {/* List */}
