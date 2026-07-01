@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Skull, BadgeCheck } from "lucide-react";
 import {
   difficultyColor,
   formatPoints,
@@ -90,6 +91,7 @@ function ArrowRight() {
     </svg>
   );
 }
+
 
 export function TeamView({ data, pdiRank, rdsRank, total }: Props) {
   const router = useRouter();
@@ -441,33 +443,44 @@ function PathView({
                     : undefined,
               }}
             >
-            <div className="flex items-center gap-3">
-                <div className="flex flex-1 items-center gap-3">
-                  {getFlagUrl(topName) && (
-                    <Image
-                      src={getFlagUrl(topName)!}
-                      alt={`${topName} flag`}
-                      width={36}
-                      height={24}
-                      className="h-6 w-9 rounded-sm object-cover shadow-sm"
-                    />
-                  )}
-                  <span className={`text-lg font-bold ${isCrossedOut(round, topName, topProb) ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
-                    {topName}
-                  </span>
+              <div className="flex items-stretch justify-between">
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
+                  <div className="flex items-center gap-3">
+                    {getFlagUrl(topName) && (
+                      <Image
+                        src={getFlagUrl(topName)!}
+                        alt={`${topName} flag`}
+                        width={36}
+                        height={24}
+                        className="h-6 w-9 rounded-sm object-cover shadow-sm"
+                      />
+                    )}
+                    <span className={`text-lg font-bold ${isCrossedOut(round, topName, topProb) ? "line-through decoration-2 decoration-white opacity-50" : "text-foreground"}`}>
+                      {topName}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-xs font-medium text-foreground/75">
+                    {getStatusLabel(round, topName, topProb)}
+                  </p>
                 </div>
-                {topRating != null && topRating > 0 && (
-                  <span
-                    title="Elo is a strength rating system that estimates how strong a team is based on match results and opponent difficulty. Higher Elo means a stronger team."
-                    className="cursor-help text-sm font-medium tabular-nums text-foreground/80"
-                  >
-                    {topRating} Elo
-                  </span>
-                )}
+
+                <div className="ml-4 flex items-center gap-2 self-center">
+                  {topRating != null && topRating > 0 && (
+                    <span
+                      title="Elo is a strength rating system that estimates how strong a team is based on match results and opponent difficulty. Higher Elo means a stronger team."
+                      className="cursor-help text-sm font-medium tabular-nums text-foreground/80"
+                    >
+                      {topRating} Elo
+                    </span>
+                  )}
+                  {getStatusLabel(round, topName, topProb) === "Defeated" && (
+                    <Skull className="h-9 w-9 fill-current stroke-black/25 text-foreground shrink-0" />
+                  )}
+                  {getStatusLabel(round, topName, topProb) === "Confirmed" && (
+                    <BadgeCheck className="h-9 w-9 fill-current stroke-black/25 text-foreground shrink-0" />
+                  )}
+                </div>
               </div>
-              <p className="mt-0.5 text-xs font-medium text-foreground/75">
-                {getStatusLabel(round, topName, topProb)}
-              </p>
             </div>
 
             {/* Other possible opponents */}
